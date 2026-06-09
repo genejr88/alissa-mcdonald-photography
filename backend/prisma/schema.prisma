@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("ADMIN")
+  createdAt    DateTime @default(now())
+}
+
+enum GalleryMood {
+  LIGHT
+  DARK
+}
+
+model Gallery {
+  id           String      @id @default(cuid())
+  title        String
+  slug         String      @unique
+  description  String?
+  mood         GalleryMood @default(LIGHT)
+  published    Boolean     @default(false)
+  watermarked  Boolean     @default(false)
+  sortOrder    Int         @default(0)
+  coverPhotoId String?
+  photos       Photo[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Photo {
+  id                 String        @id @default(cuid())
+  galleryId          String
+  gallery            Gallery       @relation(fields: [galleryId], references: [id], onDelete: Cascade)
+  cloudinaryPublicId String
+  url                String
+  width              Int
+  height             Int
+  dominantColor      String?
+  caption            String?
+  alt                String?
+  sortOrder          Int           @default(0)
+  testimonials       Testimonial[]
+  createdAt          DateTime      @default(now())
+}
+
+model Service {
+  id            String    @id @default(cuid())
+  name          String
+  number        Int       @default(1) // "№ 01" display numbering
+  description   String // what-it-feels-like copy
+  includes      String? // newline-separated includes list
+  durationMin   Int
+  price         Decimal   @db.Decimal(10, 2)
+  depositAmount Decimal?  @db.Decimal(10, 2)
+  bufferMin     Int       @default(30)
+  active        Boolean   @default(true)
+  sortOrder     Int       @default(0)
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+}
+
+model AvailabilityRule {
+  id        String @id @default(cuid())
+  weekday   Int // 0 = Sunday … 6 = Saturday
+  startTime String // "09:00" studio-local
+  endTime   String // "17:00"
+}
+
+enum ExceptionType {
+  BLACKOUT
+  EXTRA
+}
+
+model AvailabilityException {
+  id        String        @id @default(cuid())
+  date      DateTime      @db.Date
+  type      ExceptionType
+  startTime String?
+  endTime   String?
+  note      String?
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  serviceId   String
+  service     Service       @relation(fields: [serviceId], references: [id])
+  clientName  String
+  clientEmail String
+  clientPhone String?
+  notes       String?
+  startsAt    DateTime // UTC
+  endsAt      DateTime // UTC
+  status      BookingStatus @default(PENDING)
+  token       String        @unique @default(cuid())
+  depositPaid Boolean       @default(false)
+  adminNotes  String?
+  contracts   Contract[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([startsAt])
+}
+
+model ContractTemplate {
+  id        String     @id @default(cuid())
+  name      String
+  body      String // markdown with {{merge_fields}}
+  active    Boolean    @default(true)
+  contracts Contract[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Contract {
+  id            String           @id @default(cuid())
+  bookingId     String?
+  booking       Booking?         @relation(fields: [bookingId], references: [id])
+  templateId    String
+  template      ContractTemplate @relation(fields: [templateId], references: [id])
+  renderedBody  String
+  token         String           @unique @default(cuid())
+  expiresAt     DateTime
+  signedAt      DateTime?
+  signerName    String?
+  signatureData String? // base64 canvas image
+  signerIp      String?
+  pdfUrl        String?
+  createdAt     DateTime         @default(now())
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  quote       String // full review text
+  pullQuote   String // the one killer sentence
+  attribution String
+  photoId     String?
+  photo       Photo?   @relation(fields: [photoId], references: [id])
+  featured    Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  handled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AppSetting {
+  key   String @id
+  value String
+}
