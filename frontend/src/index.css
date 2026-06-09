@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand palette — warm paper & ink (see BLUEPRINT.md) */
+  --paper: 248 246 240;     /* #F8F6F0 */
+  --paper-2: 239 236 226;   /* #EFECE2 */
+  --ink: 46 44 39;          /* #2E2C27 */
+  --ink-soft: 107 101 90;   /* #6B655A */
+  --accent: 138 124 46;     /* #8A7C2E */
+  --dark: 35 32 25;         /* #232019 */
+}
+
+@layer base {
+  html {
+    @apply bg-paper text-ink font-body antialiased;
+    transition: background-color 600ms ease;
+  }
+  body {
+    @apply m-0 min-h-screen text-[15px] font-light leading-relaxed;
+  }
+  ::selection {
+    @apply bg-ink text-paper;
+  }
+}
+
+@layer components {
+  /* Mono meta label — the contact-sheet detail */
+  .meta {
+    @apply font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft;
+  }
+  /* Underline that draws in left-to-right on hover */
+  .link-draw {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 0% 1px;
+    background-position: 0 100%;
+    background-repeat: no-repeat;
+    transition: background-size 250ms ease;
+  }
+  .link-draw:hover {
+    background-size: 100% 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
