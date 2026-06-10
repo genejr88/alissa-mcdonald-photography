@@ -12,8 +12,8 @@ export default function NotFound() {
             <span key={i} className="h-1.5 w-2.5 rounded-[2px] border border-ink/60" />
           ))}
         </span>
-        <span className="font-hand text-2xl opacity-60" style={{ color: '#B3402E', rotate: '-2deg' }}>
-          blank frame
+        <span className="font-mono text-[10px] uppercase tracking-[0.25em] opacity-40">
+          no exposure
         </span>
         <span aria-hidden className="absolute -bottom-3 left-3 flex gap-2 opacity-30">
           {Array.from({ length: 7 }).map((_, i) => (

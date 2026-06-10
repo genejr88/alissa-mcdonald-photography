@@ -5,10 +5,12 @@ import RevealImage from './RevealImage';
 // circle and a handwritten note — the photographer's mark on the contact sheet.
 
 const PENCIL = '#B3402E';
-const NOTES = ['this one.', 'yes — this one.', 'the keeper.', 'oh, this one.'];
+// Written notes return when we have her real handwriting — for now the mark
+// is just the quiet grease-pencil circle, and rare.
+const NOTES = [];
 
 function isMarked(num) {
-  return num % 7 === 3;
+  return num % 9 === 4;
 }
 
 function GreasePencilCircle() {
@@ -42,7 +44,7 @@ function FrameMeta({ num, caption, light = false }) {
       >
         FR.{String(num).padStart(2, '0')}
       </span>
-      {marked && (
+      {marked && NOTES.length > 0 && (
         <span
           className="inline-block font-hand text-xl leading-none"
           style={{ color: PENCIL, transform: 'rotate(-2deg)' }}

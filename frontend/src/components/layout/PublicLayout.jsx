@@ -170,7 +170,6 @@ export default function PublicLayout() {
         {/* Big sign-off CTA */}
         <div className="flex flex-col items-start justify-between gap-8 pb-16 md:flex-row md:items-end">
           <div>
-            <p className="meta mb-4">One last thing —</p>
             <Link to="/book" className="group block">
               <h2 className="font-display text-[clamp(2.2rem,6vw,4.5rem)] font-light leading-[1.02] tracking-[-0.02em]">
                 Let&rsquo;s make something
@@ -243,7 +242,6 @@ export default function PublicLayout() {
         {/* Bottom strip */}
         <div className="flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="meta">© {new Date().getFullYear()} Alissa McDonald Photography</p>
-          <p className="meta opacity-60">Every frame made with love (and good light)</p>
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="link-draw meta self-start sm:self-auto"

@@ -64,20 +64,12 @@ I'm based out of the Midwest and travel for sessions — reach out and let's fig
 
         <div className="order-1 md:order-2">
           {portraitPhoto && (
-            <div className="relative">
-              <RevealImage
-                src={portraitPhoto.url}
-                alt="Alissa McDonald"
-                className="w-full object-cover"
-                style={{ aspectRatio: '3/4', maxHeight: '75vh' }}
-              />
-              <p
-                className="absolute -bottom-9 right-2 font-hand text-2xl"
-                style={{ color: '#B3402E', rotate: '-3deg' }}
-              >
-                usually the one behind the camera ♡
-              </p>
-            </div>
+            <RevealImage
+              src={portraitPhoto.url}
+              alt="Alissa McDonald"
+              className="w-full object-cover"
+              style={{ aspectRatio: '3/4', maxHeight: '75vh' }}
+            />
           )}
         </div>
       </div>

@@ -101,18 +101,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Session-type marquee — the editorial ticker */}
-      <div className="overflow-hidden border-b border-ink/10 py-4" aria-hidden>
+      {/* Session-type marquee — quiet editorial ticker */}
+      <div className="overflow-hidden border-b border-ink/10 py-3 opacity-60" aria-hidden>
         <div className="marquee-track">
           {[0, 1].map((dup) => (
-            <span key={dup} className="meta inline-flex items-center gap-8 pr-8 text-[12px]">
-              {['Families', 'Couples', 'Maternity', 'Seniors', 'Milestones', 'Golden hour', 'The in-betweens'].map(
-                (word) => (
-                  <span key={word} className="inline-flex items-center gap-8">
-                    {word} <span className="text-accent">✦</span>
-                  </span>
-                )
-              )}
+            <span key={dup} className="meta inline-flex items-center gap-10 pr-10 text-[11px]">
+              {['Families', 'Couples', 'Maternity', 'Seniors', 'Milestones'].map((word) => (
+                <span key={word} className="inline-flex items-center gap-10">
+                  {word} <span className="opacity-40">·</span>
+                </span>
+              ))}
             </span>
           ))}
         </div>
@@ -152,16 +150,6 @@ export default function Home() {
             Real, unscripted moments that look and{' '}
             <em className="italic">feel exactly like you</em>.
           </p>
-          <motion.p
-            className="mt-4 inline-block font-hand text-2xl md:text-3xl"
-            style={{ color: '#B3402E', rotate: '-2.5deg' }}
-            initial={{ opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-          >
-            no posing required ♡
-          </motion.p>
           <p className="mt-8 max-w-xl font-body text-base font-light leading-relaxed text-ink-soft">
             I photograph families, couples, maternity, seniors, and the small milestones that
             deserve to be remembered. No stiff posing — just light, connection, and the way you

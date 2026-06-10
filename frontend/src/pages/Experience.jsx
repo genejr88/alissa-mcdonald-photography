@@ -88,14 +88,7 @@ export default function Experience() {
               <p className="pt-1 font-serif text-2xl opacity-25 transition-opacity duration-300 group-hover:opacity-60">
                 {step.n}
               </p>
-              <h3 className="font-display text-2xl font-light md:text-3xl">
-                {step.title}
-                {step.n === '03' && (
-                  <span className="ml-4 inline-block align-middle font-hand text-xl" style={{ color: '#B3402E', rotate: '-2deg' }}>
-                    the fun part!
-                  </span>
-                )}
-              </h3>
+              <h3 className="font-display text-2xl font-light md:text-3xl">{step.title}</h3>
               <p className="col-start-2 mt-2 font-body text-sm font-light leading-relaxed text-ink-soft md:col-start-3 md:mt-0">
                 {step.body}
               </p>

@@ -26,7 +26,7 @@ export default function Galleries() {
           The <em className="italic">galleries</em>.
         </h1>
         <p className="meta mt-6 opacity-60">
-          {galleries?.length ?? 0} {galleries?.length === 1 ? 'roll' : 'rolls'} on the light table — click one to look closer
+          {galleries?.length ?? 0} {galleries?.length === 1 ? 'roll' : 'rolls'}
         </p>
       </div>
 
