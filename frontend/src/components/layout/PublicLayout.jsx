@@ -7,6 +7,7 @@ const navLinks = [
   { to: '/galleries', label: 'Galleries' },
   { to: '/experience', label: 'The Experience' },
   { to: '/kind-words', label: 'Kind Words' },
+  { to: '/guest-book', label: 'Guest Book' },
   { to: '/about', label: 'About' },
   { to: '/book', label: 'Book a Session' },
 ];

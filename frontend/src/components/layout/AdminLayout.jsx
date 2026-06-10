@@ -10,6 +10,7 @@ const adminNav = [
   { to: '/admin/contracts', label: 'Contracts' },
   { to: '/admin/testimonials', label: 'Testimonials' },
   { to: '/admin/inquiries', label: 'Inquiries' },
+  { to: '/admin/guestbook', label: 'Guest Book' },
   { to: '/admin/users', label: 'Users' },
 ];
 

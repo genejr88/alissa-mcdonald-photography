@@ -106,6 +106,17 @@ export const adminCreateTestimonial = (data) => api.post('/testimonials/admin', 
 export const adminUpdateTestimonial = (id, data) => api.put(`/testimonials/admin/${id}`, data).then((r) => r.data);
 export const adminDeleteTestimonial = (id) => api.delete(`/testimonials/admin/${id}`).then((r) => r.data);
 
+// ---- Guest book (public) ----
+export const getGuestbook = () => api.get('/guestbook').then((r) => r.data);
+export const signGuestbook = (data) => api.post('/guestbook', data).then((r) => r.data);
+
+// ---- Guest book (admin) ----
+export const adminGetGuestbook = () => api.get('/guestbook/admin').then((r) => r.data);
+export const adminUpdateGuestbookEntry = (id, data) =>
+  api.put(`/guestbook/admin/${id}`, data).then((r) => r.data);
+export const adminDeleteGuestbookEntry = (id) =>
+  api.delete(`/guestbook/admin/${id}`).then((r) => r.data);
+
 // ---- Inquiries (public) ----
 export const submitInquiry = (data) => api.post('/inquiries', data).then((r) => r.data);
 

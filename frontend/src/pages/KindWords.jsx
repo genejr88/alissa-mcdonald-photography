@@ -91,6 +91,15 @@ export default function KindWords() {
         >
           Book a session
         </Link>
+        <p className="mt-10">
+          <Link
+            to="/guest-book"
+            className="font-hand text-2xl text-ink-soft transition-colors hover:text-ink"
+            style={{ display: 'inline-block', transform: 'rotate(-1.5deg)' }}
+          >
+            …or just leave a little note in the guest book →
+          </Link>
+        </p>
       </section>
     </motion.div>
   );

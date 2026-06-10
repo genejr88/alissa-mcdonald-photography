@@ -157,6 +157,15 @@ model Testimonial {
   createdAt   DateTime @default(now())
 }
 
+model GuestbookEntry {
+  id        String   @id @default(cuid())
+  name      String
+  message   String
+  inkColor  String   @default("#2E2C27")
+  hidden    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
 model Inquiry {
   id        String   @id @default(cuid())
   name      String
