@@ -72,7 +72,6 @@ function Frame({ photo, num, onOpen, className = '', style = {} }) {
           style={style}
           onClick={() => onOpen(photo)}
         />
-        {isMarked(num) && <GreasePencilCircle />}
       </div>
       <FrameMeta num={num} caption={photo.caption} />
     </div>
@@ -190,7 +189,6 @@ function SpreadE({ photos, nums, onOpen }) {
               onClick={() => onOpen(p)}
             >
               <RevealImage src={p.url} alt={p.alt || ''} className="h-full w-full" />
-              {isMarked(nums[i]) && <GreasePencilCircle />}
             </div>
           ) : null
         )}
