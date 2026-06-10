@@ -4,12 +4,20 @@
 
 :root {
   /* Brand palette — warm paper & ink (see BLUEPRINT.md) */
-  --paper: 248 246 240;     /* #F8F6F0 */
-  --paper-2: 239 236 226;   /* #EFECE2 */
-  --ink: 46 44 39;          /* #2E2C27 */
-  --ink-soft: 107 101 90;   /* #6B655A */
-  --accent: 138 124 46;     /* #8A7C2E */
-  --dark: 35 32 25;         /* #232019 */
+  /* Channel triples for Tailwind's alpha syntax */
+  --paper-rgb: 248 246 240;
+  --paper-2-rgb: 239 236 226;
+  --ink-rgb: 46 44 39;
+  --ink-soft-rgb: 107 101 90;
+  --accent-rgb: 138 124 46;
+  --dark-rgb: 35 32 25;
+  /* Real colors for inline style={{ }} usage */
+  --paper: #F8F6F0;
+  --paper-2: #EFECE2;
+  --ink: #2E2C27;
+  --ink-soft: #6B655A;
+  --accent: #8A7C2E;
+  --dark: #232019;
 }
 
 @layer base {

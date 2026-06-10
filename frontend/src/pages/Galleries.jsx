@@ -13,34 +13,32 @@ export default function Galleries() {
   if (isLoading) return null;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
-      {/* Header */}
-      <div className="pt-24 pb-12 px-8 md:px-16">
-        <motion.h1
-          className="font-serif uppercase tracking-widest"
-          style={{
-            fontSize: 'clamp(2.5rem, 8vw, 7rem)',
-            lineHeight: 1,
-            color: 'var(--ink)',
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: [0.77, 0, 0.175, 1] }}
-        >
-          Galleries
-        </motion.h1>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen bg-paper"
+    >
+      {/* Header — matches the house editorial style */}
+      <div className="px-6 pb-12 pt-32 md:px-12">
+        <p className="meta mb-4">№ 01 — Galleries</p>
+        <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
+          The <em className="italic">galleries</em>.
+        </h1>
       </div>
 
       {/* Gallery grid */}
-      <div className="px-4 md:px-8 pb-24">
-        {!galleries?.length && (
-          <p className="opacity-40 text-sm tracking-widest uppercase">No galleries yet.</p>
-        )}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4">
+      <div className="px-6 pb-24 md:px-12">
+        {!galleries?.length && <p className="meta">No galleries yet.</p>}
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 md:gap-4">
           {galleries?.map((gallery, i) => {
             const cover = gallery.photos?.[0];
             return (
-              <Link key={gallery.id} to={`/galleries/${gallery.slug}`} className="group block relative overflow-hidden">
+              <Link
+                key={gallery.id}
+                to={`/galleries/${gallery.slug}`}
+                className="group relative block overflow-hidden"
+              >
                 <RevealImage
                   src={cover?.url || 'https://via.placeholder.com/800x600?text='}
                   alt={gallery.title}
@@ -49,18 +47,22 @@ export default function Galleries() {
                   priority={i < 2}
                 />
                 {/* Title overlay */}
-                <div className="absolute inset-0 flex items-end p-6 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/40 to-transparent p-6 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
                   <div>
-                    <p className="text-white font-serif text-xl md:text-2xl tracking-wide">{gallery.title}</p>
+                    <p className="font-display text-xl font-light text-white md:text-2xl">
+                      {gallery.title}
+                    </p>
                     {gallery.description && (
-                      <p className="text-white/60 text-xs tracking-widest uppercase mt-1">{gallery.description}</p>
+                      <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-white/60">
+                        {gallery.description}
+                      </p>
                     )}
                   </div>
                 </div>
 
-                {/* Always-visible mood badge */}
-                <div className="absolute top-4 left-4">
-                  <span className="text-xs tracking-widest uppercase opacity-0 group-hover:opacity-60 text-white transition-opacity duration-300">
+                {/* Photo count on hover */}
+                <div className="absolute left-4 top-4">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white opacity-0 transition-opacity duration-300 group-hover:opacity-60">
                     {gallery._count?.photos ?? gallery.photos?.length ?? 0} photos
                   </span>
                 </div>
@@ -69,6 +71,6 @@ export default function Galleries() {
           })}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

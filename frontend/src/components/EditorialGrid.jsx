@@ -25,7 +25,7 @@ function SpreadA({ photos, onOpen }) {
 function SpreadB({ photos, onOpen, flip }) {
   const [a, b] = photos;
   return (
-    <div className={`flex gap-4 md:gap-8 items-start px-4 md:px-12 ${flip ? 'flex-row-reverse' : ''}`}>
+    <div className={`flex gap-4 md:gap-8 items-start px-6 md:px-12 ${flip ? 'flex-row-reverse' : ''}`}>
       <div className="w-[55%] mt-0">
         {a && (
           <RevealImage
@@ -79,7 +79,7 @@ function SpreadD({ photos, onOpen }) {
   const p = photos[0];
   if (!p) return null;
   return (
-    <div className="flex gap-8 px-4 md:px-12 items-end">
+    <div className="flex gap-8 px-6 md:px-12 items-end">
       <div className="flex-1">
         <RevealImage
           src={p.url}
@@ -104,7 +104,7 @@ function SpreadD({ photos, onOpen }) {
 function SpreadE({ photos, onOpen }) {
   const [a, b, c] = photos;
   return (
-    <div className="flex gap-2 md:gap-4 px-4 md:px-8 items-stretch" style={{ height: '60vh' }}>
+    <div className="flex gap-2 md:gap-4 px-6 md:px-12 items-stretch" style={{ height: '60vh' }}>
       {[a, b, c].map((p, i) =>
         p ? (
           <div key={p.id} className={`cursor-pointer ${i === 1 ? 'flex-[2]' : 'flex-1'}`} onClick={() => onOpen(p)}>

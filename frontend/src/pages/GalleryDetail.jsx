@@ -26,52 +26,52 @@ export default function GalleryDetail() {
   }, [gallery]);
 
   if (isLoading) return null;
-  if (isError) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--paper)' }}>
-      <p className="opacity-40 text-sm tracking-widest uppercase">Gallery not found.</p>
-    </div>
-  );
+  if (isError)
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-paper">
+        <p className="meta">Gallery not found.</p>
+      </div>
+    );
 
   const isDark = gallery.mood === 'DARK';
 
   return (
     <div
-      className="min-h-screen transition-colors duration-700"
-      style={{ background: isDark ? 'var(--ink)' : 'var(--paper)', color: isDark ? 'var(--paper)' : 'var(--ink)' }}
+      className={`min-h-screen transition-colors duration-700 ${
+        isDark ? 'bg-dark text-paper' : 'bg-paper text-ink'
+      }`}
     >
-      {/* Hero / Title area */}
-      <div className="relative pt-20 pb-8 px-8 md:px-16 overflow-hidden">
-        <motion.h1
-          className="font-serif uppercase relative z-10"
-          style={{
-            fontSize: 'clamp(3rem, 12vw, 11rem)',
-            lineHeight: 0.9,
-            mixBlendMode: 'difference',
-            color: 'white',
-          }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, ease: [0.77, 0, 0.175, 1] }}
-        >
-          {gallery.title.split('').map((char, i) => (
-            <motion.span
+      {/* Header */}
+      <div className="px-6 pb-12 pt-32 md:px-12">
+        <p className={`meta mb-4 ${isDark ? 'text-paper/50' : ''}`}>
+          {gallery.photos?.length ?? 0} photographs
+        </p>
+        <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
+          {gallery.title.split(' ').map((word, i, arr) => (
+            <span
               key={i}
-              style={{ display: 'inline-block', overflow: 'hidden' }}
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              transition={{ duration: 0.6, delay: i * 0.025, ease: [0.77, 0, 0.175, 1] }}
+              className={`inline-block overflow-hidden align-bottom ${i < arr.length - 1 ? 'mr-[0.22em]' : ''}`}
             >
-              {char === ' ' ? ' ' : char}
-            </motion.span>
+              <motion.span
+                className="inline-block"
+                initial={{ y: '110%' }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1 + i * 0.1, ease: [0.77, 0, 0.175, 1] }}
+              >
+                {i === arr.length - 1 ? <em className="italic">{word}</em> : word}
+              </motion.span>
+            </span>
           ))}
-        </motion.h1>
+        </h1>
 
         {gallery.description && (
           <motion.p
-            className="mt-6 text-sm tracking-widest uppercase opacity-40 max-w-md"
+            className={`mt-6 max-w-md font-body text-sm font-light leading-relaxed ${
+              isDark ? 'text-paper/60' : 'text-ink-soft'
+            }`}
             initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 0.4, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
           >
             {gallery.description}
           </motion.p>
@@ -82,12 +82,9 @@ export default function GalleryDetail() {
       <EditorialGrid photos={gallery.photos ?? []} onOpen={openLightbox} />
 
       {/* Footer nav */}
-      <div className="px-8 md:px-16 pb-24 pt-8">
-        <Link
-          to="/galleries"
-          className="text-xs tracking-widest uppercase opacity-40 hover:opacity-80 transition-opacity"
-        >
-          ← All Galleries
+      <div className="px-6 pb-24 pt-8 md:px-12">
+        <Link to="/galleries" className={`link-draw meta ${isDark ? 'text-paper/50' : ''}`}>
+          ← All galleries
         </Link>
       </div>
 
