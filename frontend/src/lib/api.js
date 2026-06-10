@@ -23,6 +23,37 @@ export const getPublicSettings = () => api.get('/settings/public').then((r) => r
 export const getSettings = () => api.get('/settings').then((r) => r.data);
 export const updateSettings = (values) => api.put('/settings', values).then((r) => r.data);
 
+// ---- Services (public) ----
+export const getServices = () => api.get('/services').then((r) => r.data);
+
+// ---- Services (admin) ----
+export const adminGetServices = () => api.get('/services/admin').then((r) => r.data);
+export const adminCreateService = (data) => api.post('/services/admin', data).then((r) => r.data);
+export const adminUpdateService = (id, data) => api.put(`/services/admin/${id}`, data).then((r) => r.data);
+export const adminDeleteService = (id) => api.delete(`/services/admin/${id}`).then((r) => r.data);
+
+// ---- Availability ----
+export const getAvailableSlots = (serviceId, date) =>
+  api.get('/availability/slots', { params: { serviceId, date } }).then((r) => r.data);
+export const getAvailableMonth = (serviceId, month) =>
+  api.get('/availability/month', { params: { serviceId, month } }).then((r) => r.data);
+
+// ---- Availability (admin) ----
+export const getAvailabilityRules = () => api.get('/availability/rules').then((r) => r.data);
+export const updateAvailabilityRules = (rules) => api.put('/availability/rules', { rules }).then((r) => r.data);
+export const getAvailabilityExceptions = () => api.get('/availability/exceptions').then((r) => r.data);
+export const addAvailabilityException = (data) => api.post('/availability/exceptions', data).then((r) => r.data);
+export const deleteAvailabilityException = (id) => api.delete(`/availability/exceptions/${id}`).then((r) => r.data);
+
+// ---- Bookings (public) ----
+export const createBooking = (data) => api.post('/bookings', data).then((r) => r.data);
+export const getBookingByToken = (token) => api.get(`/bookings/token/${token}`).then((r) => r.data);
+export const cancelBookingByToken = (token) => api.post(`/bookings/token/${token}/cancel`).then((r) => r.data);
+
+// ---- Bookings (admin) ----
+export const adminGetBookings = (params) => api.get('/bookings/admin', { params }).then((r) => r.data);
+export const adminUpdateBooking = (id, data) => api.put(`/bookings/admin/${id}`, data).then((r) => r.data);
+
 // ---- Galleries (public) ----
 export const getGalleries = () => api.get('/galleries').then((r) => r.data);
 export const getGallery = (slug) => api.get(`/galleries/${slug}`).then((r) => r.data);

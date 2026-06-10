@@ -5,8 +5,11 @@ import { useAuth } from '../../lib/auth';
 const adminNav = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/galleries', label: 'Galleries' },
+  { to: '/admin/bookings', label: 'Bookings' },
+  { to: '/admin/services', label: 'Services' },
+  { to: '/admin/availability', label: 'Availability' },
   { to: '/admin/contracts', label: 'Contracts' },
-  // Phase 3+: Services, Availability, Bookings, Testimonials, Inquiries, Settings
+  // Phase 5+: Testimonials, Inquiries, Settings
 ];
 
 export default function AdminLayout() {
