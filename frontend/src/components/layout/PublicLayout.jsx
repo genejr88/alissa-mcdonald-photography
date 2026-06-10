@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LOGO_DARK, LOGO_WHITE, SIGNATURE } from '../../lib/branding';
+import { InstagramDoodle, FacebookDoodle, NoteDoodle } from '../DoodleIcons';
 
 const navLinks = [
   { to: '/galleries', label: 'Galleries' },
@@ -145,16 +146,18 @@ export default function PublicLayout() {
                   href="https://www.instagram.com/alissamcdonald.photography_"
                   target="_blank"
                   rel="noreferrer"
-                  className="font-mono text-[10px] uppercase tracking-widest text-paper/50 hover:text-paper/80"
+                  className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-paper/50 hover:text-paper/80"
                 >
+                  <InstagramDoodle className="h-4 w-4" />
                   Instagram
                 </a>
                 <a
                   href="https://www.facebook.com/uncagedcreations.byAlissa"
                   target="_blank"
                   rel="noreferrer"
-                  className="font-mono text-[10px] uppercase tracking-widest text-paper/50 hover:text-paper/80"
+                  className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-paper/50 hover:text-paper/80"
                 >
+                  <FacebookDoodle className="h-4 w-4" />
                   Facebook
                 </a>
               </div>
@@ -211,20 +214,26 @@ export default function PublicLayout() {
                 href="https://www.instagram.com/alissamcdonald.photography_"
                 target="_blank"
                 rel="noreferrer"
-                className="link-draw self-start font-body text-sm font-light"
+                className="group flex items-center gap-2.5 self-start font-body text-sm font-light"
               >
-                Instagram ↗
+                <InstagramDoodle className="h-[18px] w-[18px] shrink-0 opacity-60 transition-all duration-300 group-hover:rotate-[-6deg] group-hover:opacity-100" />
+                <span className="link-draw">Instagram ↗</span>
               </a>
               <a
                 href="https://www.facebook.com/uncagedcreations.byAlissa"
                 target="_blank"
                 rel="noreferrer"
-                className="link-draw self-start font-body text-sm font-light"
+                className="group flex items-center gap-2.5 self-start font-body text-sm font-light"
               >
-                Facebook ↗
+                <FacebookDoodle className="h-[18px] w-[18px] shrink-0 opacity-60 transition-all duration-300 group-hover:rotate-[6deg] group-hover:opacity-100" />
+                <span className="link-draw">Facebook ↗</span>
               </a>
-              <Link to="/contact" className="link-draw self-start font-body text-sm font-light">
-                Send a note
+              <Link
+                to="/contact"
+                className="group flex items-center gap-2.5 self-start font-body text-sm font-light"
+              >
+                <NoteDoodle className="h-[18px] w-[18px] shrink-0 opacity-60 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+                <span className="link-draw">Send a note</span>
               </Link>
             </div>
           </div>
