@@ -210,13 +210,25 @@ router.post('/sign/:token', async (req, res, next) => {
       }).catch(console.error);
     }
 
-    // Email admin
+    // Email admin — signed contract with the client's details at a glance
     const adminEmail = process.env.ADMIN_EMAIL;
     if (adminEmail) {
       sendMail({
         to: adminEmail,
-        subject: `Contract signed: ${signerName}`,
-        text: `${signerName} has signed their contract.\n${pdfUrl ? `PDF: ${pdfUrl}` : ''}`,
+        replyTo: intakeData.email ? `${signerName} <${intakeData.email}>` : undefined,
+        subject: `Contract signed: ${signerName} ✓`,
+        text:
+          `${signerName} just signed their contract.\n\n` +
+          `Phone: ${intakeData.phone}\nEmail: ${intakeData.email}\nAddress: ${intakeData.address}\n` +
+          `Participants:\n${intakeData.participants}\n\n` +
+          `Model release: ${intakeData.modelRelease ? 'GRANTED' : 'DECLINED'}\n\n` +
+          (pdfUrl ? `Signed PDF: ${pdfUrl}` : ''),
+        html:
+          `<p><strong>${signerName}</strong> just signed their contract.</p>` +
+          `<p>Phone: ${intakeData.phone}<br>Email: ${intakeData.email}<br>Address: ${intakeData.address}</p>` +
+          `<p><strong>Participants:</strong><br>${String(intakeData.participants).replace(/</g, '&lt;').replace(/\n/g, '<br>')}</p>` +
+          `<p><strong>Model release:</strong> ${intakeData.modelRelease ? '✅ GRANTED' : '❌ DECLINED'}</p>` +
+          (pdfUrl ? `<p><a href="${pdfUrl}">Download the signed PDF →</a></p>` : ''),
       }).catch(console.error);
     }
 
