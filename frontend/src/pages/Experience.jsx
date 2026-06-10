@@ -83,10 +83,19 @@ export default function Experience() {
           {steps.map((step, i) => (
             <div
               key={step.n}
-              className="grid grid-cols-[3rem_1fr] gap-8 py-10 md:grid-cols-[6rem_1fr_1fr]"
+              className="group grid grid-cols-[3rem_1fr] gap-8 py-10 transition-colors duration-300 hover:bg-ink/[0.02] md:grid-cols-[6rem_1fr_1fr]"
             >
-              <p className="meta pt-1">{step.n}</p>
-              <h3 className="font-display text-2xl font-light md:text-3xl">{step.title}</h3>
+              <p className="pt-1 font-serif text-2xl opacity-25 transition-opacity duration-300 group-hover:opacity-60">
+                {step.n}
+              </p>
+              <h3 className="font-display text-2xl font-light md:text-3xl">
+                {step.title}
+                {step.n === '03' && (
+                  <span className="ml-4 inline-block align-middle font-hand text-xl" style={{ color: '#B3402E', rotate: '-2deg' }}>
+                    the fun part!
+                  </span>
+                )}
+              </h3>
               <p className="col-start-2 mt-2 font-body text-sm font-light leading-relaxed text-ink-soft md:col-start-3 md:mt-0">
                 {step.body}
               </p>

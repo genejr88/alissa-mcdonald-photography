@@ -11,6 +11,24 @@ const navLinks = [
   { to: '/book', label: 'Book a Session' },
 ];
 
+// Live studio clock — Connecticut time, ticks each minute
+function StudioClock() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span>
+      {now.toLocaleTimeString('en-US', {
+        timeZone: 'America/New_York',
+        hour: 'numeric',
+        minute: '2-digit',
+      })}
+    </span>
+  );
+}
+
 export default function PublicLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
@@ -148,38 +166,90 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className="px-6 pb-10 pt-24 md:px-12">
-        <div className="flex flex-col gap-6 border-t border-ink/10 pt-8 md:flex-row md:items-end md:justify-between">
+      <footer className="border-t border-ink/10 px-6 pb-8 pt-20 md:px-12">
+        {/* Big sign-off CTA */}
+        <div className="flex flex-col items-start justify-between gap-8 pb-16 md:flex-row md:items-end">
           <div>
-            <img
-              src={LOGO_DARK}
-              alt="Alissa McDonald Photography"
-              className="h-14 w-auto"
-            />
-            <p className="meta mt-2">Moments that feel like you</p>
-          </div>
-          <div className="flex gap-8">
-            <a
-              href="https://www.instagram.com/alissamcdonald.photography_"
-              target="_blank"
-              rel="noreferrer"
-              className="link-draw meta"
-            >
-              Instagram
-            </a>
-            <a
-              href="https://www.facebook.com/uncagedcreations.byAlissa"
-              target="_blank"
-              rel="noreferrer"
-              className="link-draw meta"
-            >
-              Facebook
-            </a>
-            <Link to="/contact" className="link-draw meta">
-              Contact
+            <p className="meta mb-4">One last thing —</p>
+            <Link to="/book" className="group block">
+              <h2 className="font-display text-[clamp(2.2rem,6vw,4.5rem)] font-light leading-[1.02] tracking-[-0.02em]">
+                Let&rsquo;s make something
+                <br />
+                <em className="italic">beautiful</em>
+                <span className="ml-4 inline-block transition-transform duration-300 group-hover:translate-x-3">
+                  →
+                </span>
+              </h2>
             </Link>
           </div>
+          <p className="max-w-[16rem] font-body text-sm font-light leading-relaxed text-ink-soft">
+            Sessions book up a few weeks out — if you have a date in mind, don&rsquo;t wait on it.
+          </p>
+        </div>
+
+        {/* Columns */}
+        <div className="grid gap-10 border-t border-ink/10 py-12 sm:grid-cols-2 md:grid-cols-4">
+          <div>
+            <img src={LOGO_DARK} alt="Alissa McDonald Photography" className="h-12 w-auto" />
+            <p className="meta mt-3">Moments that feel like you</p>
+          </div>
+          <div>
+            <p className="meta mb-4 opacity-60">Navigate</p>
+            <div className="flex flex-col gap-2.5">
+              {navLinks.map((l) => (
+                <Link key={l.to} to={l.to} className="link-draw self-start font-body text-sm font-light">
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="meta mb-4 opacity-60">Connect</p>
+            <div className="flex flex-col gap-2.5">
+              <a
+                href="https://www.instagram.com/alissamcdonald.photography_"
+                target="_blank"
+                rel="noreferrer"
+                className="link-draw self-start font-body text-sm font-light"
+              >
+                Instagram ↗
+              </a>
+              <a
+                href="https://www.facebook.com/uncagedcreations.byAlissa"
+                target="_blank"
+                rel="noreferrer"
+                className="link-draw self-start font-body text-sm font-light"
+              >
+                Facebook ↗
+              </a>
+              <Link to="/contact" className="link-draw self-start font-body text-sm font-light">
+                Send a note
+              </Link>
+            </div>
+          </div>
+          <div>
+            <p className="meta mb-4 opacity-60">The studio</p>
+            <p className="font-body text-sm font-light leading-relaxed text-ink-soft">
+              Based in Connecticut,
+              <br />
+              traveling often.
+            </p>
+            <p className="meta mt-4">
+              CT — <StudioClock />
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom strip */}
+        <div className="flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="meta">© {new Date().getFullYear()} Alissa McDonald Photography</p>
+          <p className="meta opacity-60">Every frame made with love (and good light)</p>
+          <button
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="link-draw meta self-start sm:self-auto"
+          >
+            Back to top ↑
+          </button>
         </div>
       </footer>
     </div>

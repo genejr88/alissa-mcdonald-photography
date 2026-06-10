@@ -29,6 +29,9 @@ export default function KindWords() {
         <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
           What clients <em className="italic">say</em>.
         </h1>
+        <p className="mt-4 inline-block font-hand text-2xl" style={{ color: '#B3402E', rotate: '-2deg' }}>
+          real notes, from real families
+        </p>
       </div>
 
       {/* Testimonials */}

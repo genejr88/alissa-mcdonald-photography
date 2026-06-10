@@ -24,12 +24,28 @@
   html {
     @apply bg-paper text-ink font-body antialiased;
     transition: background-color 600ms ease;
+    scroll-behavior: smooth;
   }
   body {
     @apply m-0 min-h-screen text-[15px] font-light leading-relaxed;
   }
   ::selection {
     @apply bg-ink text-paper;
+  }
+  /* Thin ink scrollbar — part of the stationery feel */
+  ::-webkit-scrollbar {
+    width: 9px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--paper);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(46, 44, 39, 0.25);
+    border-radius: 9999px;
+    border: 2px solid var(--paper);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(46, 44, 39, 0.45);
   }
 }
 
@@ -48,6 +64,17 @@
   }
   .link-draw:hover {
     background-size: 100% 1px;
+  }
+  /* Infinite marquee — content is duplicated once, track slides half its width */
+  .marquee-track {
+    display: inline-flex;
+    white-space: nowrap;
+    animation: marquee 36s linear infinite;
+  }
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
+    }
   }
 }
 

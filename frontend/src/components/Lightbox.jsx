@@ -65,19 +65,27 @@ export default function Lightbox({ photos, currentIndex, onClose, onNavigate }) 
         />
       </AnimatePresence>
 
+      {/* Film edge — sprocket holes along the top */}
+      <div aria-hidden className="absolute inset-x-0 top-0 flex items-center justify-center gap-3 py-2.5 opacity-25">
+        {Array.from({ length: 24 }).map((_, i) => (
+          <span key={i} className="h-2 w-3 rounded-[2px] border border-white/60" />
+        ))}
+      </div>
+
       {/* Caption */}
       {photo.caption && (
         <div
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 text-white/50 text-xs tracking-widest uppercase"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 font-mono text-[10px] uppercase tracking-[0.2em] text-white/50"
           onClick={(e) => e.stopPropagation()}
         >
           {photo.caption}
         </div>
       )}
 
-      {/* Counter */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 text-white/30 text-xs tracking-widest">
-        {currentIndex + 1} / {photos.length}
+      {/* Frame counter — contact-sheet style */}
+      <div className="absolute left-6 top-8 font-mono text-[11px] tracking-[0.2em] text-white/40">
+        FR.{String(currentIndex + 1).padStart(2, '0')}
+        <span className="text-white/20"> — {String(photos.length).padStart(2, '0')}</span>
       </div>
 
       {/* Close */}

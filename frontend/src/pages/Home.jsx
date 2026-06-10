@@ -87,10 +87,36 @@ export default function Home() {
               Natural-light photography for families, couples, maternity, seniors, and the
               milestones in between.
             </p>
-            <span className="meta hidden text-paper/60 md:block">( scroll )</span>
+            <span className="hidden flex-col items-center gap-2 md:flex">
+              <span className="meta text-paper/60">scroll</span>
+              <span className="relative h-12 w-px overflow-hidden bg-paper/20">
+                <motion.span
+                  className="absolute inset-x-0 top-0 h-1/2 bg-paper/80"
+                  animate={{ y: ['-100%', '200%'] }}
+                  transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+                />
+              </span>
+            </span>
           </motion.div>
         </div>
       </section>
+
+      {/* Session-type marquee — the editorial ticker */}
+      <div className="overflow-hidden border-b border-ink/10 py-4" aria-hidden>
+        <div className="marquee-track">
+          {[0, 1].map((dup) => (
+            <span key={dup} className="meta inline-flex items-center gap-8 pr-8 text-[12px]">
+              {['Families', 'Couples', 'Maternity', 'Seniors', 'Milestones', 'Golden hour', 'The in-betweens'].map(
+                (word) => (
+                  <span key={word} className="inline-flex items-center gap-8">
+                    {word} <span className="text-accent">✦</span>
+                  </span>
+                )
+              )}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* Selected work — staggered reveal grid */}
       {featurePhotos.length > 0 && (
@@ -120,12 +146,22 @@ export default function Home() {
 
       {/* Intro statement */}
       <section className="border-t border-ink/10 px-6 py-24 md:px-12">
-        <div className="max-w-3xl">
+        <div className="relative max-w-3xl">
           <p className="meta mb-6">№ 01 — The work</p>
           <p className="font-display text-3xl font-light leading-snug md:text-5xl">
             Real, unscripted moments that look and{' '}
             <em className="italic">feel exactly like you</em>.
           </p>
+          <motion.p
+            className="mt-4 inline-block font-hand text-2xl md:text-3xl"
+            style={{ color: '#B3402E', rotate: '-2.5deg' }}
+            initial={{ opacity: 0, y: 8 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            no posing required ♡
+          </motion.p>
           <p className="mt-8 max-w-xl font-body text-base font-light leading-relaxed text-ink-soft">
             I photograph families, couples, maternity, seniors, and the small milestones that
             deserve to be remembered. No stiff posing — just light, connection, and the way you

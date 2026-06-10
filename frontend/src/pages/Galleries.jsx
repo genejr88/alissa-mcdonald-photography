@@ -25,6 +25,9 @@ export default function Galleries() {
         <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
           The <em className="italic">galleries</em>.
         </h1>
+        <p className="meta mt-6 opacity-60">
+          {galleries?.length ?? 0} {galleries?.length === 1 ? 'roll' : 'rolls'} on the light table — click one to look closer
+        </p>
       </div>
 
       {/* Gallery grid */}
@@ -60,10 +63,13 @@ export default function Galleries() {
                   </div>
                 </div>
 
-                {/* Photo count on hover */}
-                <div className="absolute left-4 top-4">
-                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white opacity-0 transition-opacity duration-300 group-hover:opacity-60">
-                    {gallery._count?.photos ?? gallery.photos?.length ?? 0} photos
+                {/* Roll label + frame count */}
+                <div className="absolute left-4 top-4 mix-blend-difference">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/80">
+                    Roll {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <span className="ml-3 font-mono text-[10px] uppercase tracking-[0.18em] text-white/0 transition-colors duration-300 group-hover:text-white/60">
+                    {gallery._count?.photos ?? gallery.photos?.length ?? 0} frames
                   </span>
                 </div>
               </Link>
