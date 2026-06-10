@@ -5,6 +5,7 @@ const cors = require('cors');
 
 const authRoutes = require('./routes/auth');
 const settingsRoutes = require('./routes/settings');
+const galleriesRoutes = require('./routes/galleries');
 
 const app = express();
 app.use(cors());
@@ -14,6 +15,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/galleries', galleriesRoutes);
 
 // Serve the built frontend (single Railway service)
 const distDir = path.join(__dirname, '../../frontend/dist');

@@ -4,7 +4,8 @@ import { useAuth } from '../../lib/auth';
 // Admin stays plain, fast, and dense — the polish budget is spent on the public site.
 const adminNav = [
   { to: '/admin', label: 'Dashboard', end: true },
-  // Phase 2+: Galleries, Services, Availability, Bookings, Contracts,
+  { to: '/admin/galleries', label: 'Galleries' },
+  // Phase 3+: Services, Availability, Bookings, Contracts,
   // Testimonials, Inquiries, Settings
 ];
 

@@ -4,8 +4,12 @@ import { useAuth } from './lib/auth';
 import PublicLayout from './components/layout/PublicLayout';
 import AdminLayout from './components/layout/AdminLayout';
 import Home from './pages/Home';
+import Galleries from './pages/Galleries';
+import GalleryDetail from './pages/GalleryDetail';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminGalleries from './pages/admin/AdminGalleries';
+import AdminGalleryDetail from './pages/admin/AdminGalleryDetail';
 import NotFound from './pages/NotFound';
 
 function RequireAuth({ children }) {
@@ -22,8 +26,10 @@ export default function App() {
       <Routes location={location} key={location.pathname}>
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
-          {/* Phase 2+: /galleries, /galleries/:slug, /about, /experience,
-              /kind-words, /book, /contact, /sign/:token, /booking/:token */}
+          <Route path="/galleries" element={<Galleries />} />
+          <Route path="/galleries/:slug" element={<GalleryDetail />} />
+          {/* Phase 3+: /about, /experience, /kind-words, /book, /contact,
+              /sign/:token, /booking/:token */}
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/admin/login" element={<Login />} />
@@ -36,8 +42,10 @@ export default function App() {
           }
         >
           <Route index element={<AdminDashboard />} />
-          {/* Phase 2+: galleries, services, availability, bookings,
-              contracts, testimonials, inquiries, settings */}
+          <Route path="galleries" element={<AdminGalleries />} />
+          <Route path="galleries/:id" element={<AdminGalleryDetail />} />
+          {/* Phase 3+: services, availability, bookings, contracts,
+              testimonials, inquiries, settings */}
         </Route>
       </Routes>
     </AnimatePresence>
