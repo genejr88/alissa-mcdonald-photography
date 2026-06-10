@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LOGO_DARK, LOGO_WHITE } from '../../lib/branding';
+import { LOGO_DARK, LOGO_WHITE, SIGNATURE } from '../../lib/branding';
 
 const navLinks = [
   { to: '/galleries', label: 'Galleries' },
@@ -191,6 +191,7 @@ export default function PublicLayout() {
           <div>
             <img src={LOGO_DARK} alt="Alissa McDonald Photography" className="h-12 w-auto" />
             <p className="meta mt-3">Moments that feel like you</p>
+            <img src={SIGNATURE} alt="" aria-hidden className="mt-5 h-9 w-auto opacity-70" />
           </div>
           <div>
             <p className="meta mb-4 opacity-60">Navigate</p>

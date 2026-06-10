@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getGallery, getPublicSettings } from '../lib/api';
 import RevealImage from '../components/RevealImage';
+import { SIGNATURE } from '../lib/branding';
 
 export default function About() {
   const { data: gallery } = useQuery({
@@ -51,6 +52,17 @@ I'm based out of the Midwest and travel for sessions — reach out and let's fig
               </p>
             ))}
           </div>
+
+          {/* Her real signature */}
+          <motion.img
+            src={SIGNATURE}
+            alt="Alissa"
+            className="mt-10 h-16 w-auto md:h-20"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          />
 
           <div className="mt-12 flex gap-8">
             <Link to="/experience" className="link-draw meta">
