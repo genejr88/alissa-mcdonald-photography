@@ -10,6 +10,7 @@ const adminNav = [
   { to: '/admin/contracts', label: 'Contracts' },
   { to: '/admin/testimonials', label: 'Testimonials' },
   { to: '/admin/inquiries', label: 'Inquiries' },
+  { to: '/admin/users', label: 'Users' },
 ];
 
 export default function AdminLayout() {

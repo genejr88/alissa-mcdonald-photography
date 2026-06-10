@@ -18,6 +18,13 @@ export const getMe = () => api.get('/auth/me').then((r) => r.data);
 export const changePassword = (currentPassword, newPassword) =>
   api.put('/auth/password', { currentPassword, newPassword }).then((r) => r.data);
 
+// ---- Users (admin) ----
+export const adminGetUsers = () => api.get('/auth/users').then((r) => r.data);
+export const adminCreateUser = (data) => api.post('/auth/users', data).then((r) => r.data);
+export const adminResetUserPassword = (id, newPassword) =>
+  api.put(`/auth/users/${id}/password`, { newPassword }).then((r) => r.data);
+export const adminDeleteUser = (id) => api.delete(`/auth/users/${id}`).then((r) => r.data);
+
 // ---- Settings ----
 export const getPublicSettings = () => api.get('/settings/public').then((r) => r.data);
 export const getSettings = () => api.get('/settings').then((r) => r.data);

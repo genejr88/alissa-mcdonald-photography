@@ -55,4 +55,74 @@ router.put('/password', requireAuth, async (req, res, next) => {
   }
 });
 
+// ── User management (any authenticated user — this is a single-studio app) ──
+
+router.get('/users', requireAuth, async (req, res, next) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, username: true, email: true, name: true, role: true, createdAt: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(users);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/users', requireAuth, async (req, res, next) => {
+  try {
+    const { username, email, name, password } = req.body;
+    if (!username || !email || !name || !password || password.length < 8) {
+      return res
+        .status(400)
+        .json({ error: 'Username, email, name, and a password of at least 8 characters are required' });
+    }
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ username }, { email }] },
+    });
+    if (existing) {
+      return res.status(409).json({ error: 'A user with that username or email already exists' });
+    }
+    const user = await prisma.user.create({
+      data: { username, email, name, passwordHash: await bcrypt.hash(password, 10) },
+    });
+    res.status(201).json({ id: user.id, username: user.username, email: user.email, name: user.name });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Reset another user's password (no current password needed)
+router.put('/users/:id/password', requireAuth, async (req, res, next) => {
+  try {
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ error: 'New password must be at least 8 characters' });
+    }
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data: { passwordHash: await bcrypt.hash(newPassword, 10) },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/users/:id', requireAuth, async (req, res, next) => {
+  try {
+    if (req.params.id === req.user.id) {
+      return res.status(400).json({ error: 'You cannot delete your own account' });
+    }
+    const count = await prisma.user.count();
+    if (count <= 1) {
+      return res.status(400).json({ error: 'Cannot delete the last user' });
+    }
+    await prisma.user.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

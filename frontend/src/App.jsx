@@ -23,6 +23,7 @@ import AdminServices from './pages/admin/AdminServices';
 import AdminAvailability from './pages/admin/AdminAvailability';
 import AdminTestimonials from './pages/admin/AdminTestimonials';
 import AdminInquiries from './pages/admin/AdminInquiries';
+import AdminUsers from './pages/admin/AdminUsers';
 import NotFound from './pages/NotFound';
 
 function RequireAuth({ children }) {
@@ -68,6 +69,7 @@ export default function App() {
           <Route path="availability" element={<AdminAvailability />} />
           <Route path="testimonials" element={<AdminTestimonials />} />
           <Route path="inquiries" element={<AdminInquiries />} />
+          <Route path="users" element={<AdminUsers />} />
         </Route>
       </Routes>
     </AnimatePresence>

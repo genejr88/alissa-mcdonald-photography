@@ -36,7 +36,7 @@ function SpreadB({ photos, onOpen, flip }) {
             onClick={() => onOpen(a)}
           />
         )}
-        {a?.caption && <p className="mt-3 text-xs tracking-widest uppercase opacity-50">{a.caption}</p>}
+        {a?.caption && <p className="mt-3 text-xs tracking-widest uppercase opacity-70">{a.caption}</p>}
       </div>
       <div className="w-[40%] mt-[15vh]">
         {b && (
@@ -48,7 +48,7 @@ function SpreadB({ photos, onOpen, flip }) {
             onClick={() => onOpen(b)}
           />
         )}
-        {b?.caption && <p className="mt-3 text-xs tracking-widest uppercase opacity-50">{b.caption}</p>}
+        {b?.caption && <p className="mt-3 text-xs tracking-widest uppercase opacity-70">{b.caption}</p>}
       </div>
     </div>
   );
@@ -68,7 +68,7 @@ function SpreadC({ photos, onOpen, flip }) {
           style={{ aspectRatio: p.width && p.height ? `${p.width}/${p.height}` : '3/4' }}
           onClick={() => onOpen(p)}
         />
-        {p.caption && <p className="mt-3 text-xs tracking-widest uppercase opacity-50">{p.caption}</p>}
+        {p.caption && <p className="mt-3 text-xs tracking-widest uppercase opacity-70">{p.caption}</p>}
       </div>
     </div>
   );
@@ -91,7 +91,7 @@ function SpreadD({ photos, onOpen }) {
       </div>
       {p.caption && (
         <div className="w-24 shrink-0 pb-4">
-          <p className="text-xs tracking-widest uppercase opacity-50 [writing-mode:vertical-rl] rotate-180">
+          <p className="text-xs tracking-widest uppercase opacity-70 [writing-mode:vertical-rl] rotate-180">
             {p.caption}
           </p>
         </div>

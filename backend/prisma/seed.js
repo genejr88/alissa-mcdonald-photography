@@ -5,7 +5,8 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Admin — re-seeded every deploy so she can always get back in
+  // Admin — created if missing. Password is only set on first create so that
+  // in-app password changes survive deploys (seed runs on every deploy).
   const username = process.env.ADMIN_USERNAME || 'alissa';
   const password = process.env.ADMIN_PASSWORD || 'ChangeMe123!';
   const email = process.env.ADMIN_EMAIL || 'alissa@example.com';
@@ -14,7 +15,7 @@ async function main() {
   }
   await prisma.user.upsert({
     where: { username },
-    update: { passwordHash: await bcrypt.hash(password, 10) },
+    update: {},
     create: {
       username,
       email,

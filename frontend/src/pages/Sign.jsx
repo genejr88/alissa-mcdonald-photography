@@ -133,7 +133,7 @@ function SignaturePad({ onSigned, onCleared }) {
       <button
         type="button"
         onClick={clear}
-        className="mt-2 text-xs tracking-widest uppercase opacity-30 hover:opacity-60 transition-opacity"
+        className="mt-2 text-xs tracking-widest uppercase opacity-70 hover:opacity-80 transition-opacity"
       >
         Clear
       </button>
@@ -171,13 +171,13 @@ export default function Sign() {
 
   const canSubmit = signerName.trim().length >= 3 && hasSig && agreed && !submit.isPending;
 
-  if (isLoading) return <PageShell><p className="opacity-30 text-sm animate-pulse">Loading contract…</p></PageShell>;
+  if (isLoading) return <PageShell><p className="opacity-50 text-sm animate-pulse">Loading contract…</p></PageShell>;
 
   if (isError) {
     const msg = error?.response?.data?.error || 'This link is invalid, expired, or has already been used.';
     return (
       <PageShell>
-        <p className="text-sm opacity-50">{msg}</p>
+        <p className="text-sm opacity-70">{msg}</p>
       </PageShell>
     );
   }
@@ -190,7 +190,7 @@ export default function Sign() {
             <span className="text-lg">✓</span>
           </div>
           <h2 className="font-serif text-3xl mb-4">You're all signed.</h2>
-          <p className="text-sm opacity-50 leading-relaxed max-w-sm mb-6">
+          <p className="text-sm opacity-70 leading-relaxed max-w-sm mb-6">
             Thank you for signing. A copy has been sent to your email. I can't wait for your session!
           </p>
           {done.pdfUrl && (
@@ -213,13 +213,13 @@ export default function Sign() {
       <div className="max-w-3xl mx-auto px-6 md:px-10 pt-20 pb-32">
         {/* Header */}
         <div className="mb-8 pb-6 border-b" style={{ borderColor: 'rgba(46,44,39,0.1)' }}>
-          <p className="text-xs tracking-widest uppercase opacity-40 mb-2" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+          <p className="text-xs tracking-widest uppercase opacity-60 mb-2" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
             Alissa McDonald Photography
           </p>
           <h1 className="font-serif" style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', lineHeight: 1.05, color: 'var(--ink)' }}>
             Photography Services Agreement
           </h1>
-          <p className="text-xs opacity-30 mt-2" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+          <p className="text-xs opacity-50 mt-2" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
             Please read the full agreement below before signing.
           </p>
         </div>
@@ -235,7 +235,7 @@ export default function Sign() {
 
           {/* Typed name */}
           <div className="mb-8">
-            <label className="block text-xs tracking-widest uppercase opacity-40 mb-3">
+            <label className="block text-xs tracking-widest uppercase opacity-60 mb-3">
               Type your full legal name *
             </label>
             <input
@@ -253,7 +253,7 @@ export default function Sign() {
 
           {/* Canvas pad */}
           <div className="mb-8">
-            <label className="block text-xs tracking-widest uppercase opacity-40 mb-3">
+            <label className="block text-xs tracking-widest uppercase opacity-60 mb-3">
               Draw your signature *
             </label>
             <SignaturePad
