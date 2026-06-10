@@ -17,6 +17,7 @@ export default {
         serif: ['Fraunces', 'Georgia', 'serif'],
         body: ['"Hanken Grotesk"', 'system-ui', 'sans-serif'],
         mono: ['"IBM Plex Mono"', 'ui-monospace', 'monospace'],
+        hand: ['Caveat', 'cursive'], // grease-pencil annotations on contact sheets
       },
       transitionTimingFunction: {
         reveal: 'cubic-bezier(0.77, 0, 0.175, 1)',

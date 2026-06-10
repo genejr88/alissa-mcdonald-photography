@@ -3,6 +3,13 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getServices, getAvailableMonth, getAvailableSlots, createBooking } from '../lib/api';
+import { sunsetLocal } from '../lib/sun';
+
+// Studio location (Trumbull, CT area) — used for golden-hour slot tagging
+const STUDIO = { lat: 41.24, lng: -73.2, tz: 'America/New_York' };
+// A slot is "golden hour" if it starts in the window before sunset
+const GOLDEN_BEFORE_SUNSET = 90; // window opens (minutes before sunset)
+const GOLDEN_CUTOFF = 15; // window closes — too close to sunset to start
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -175,10 +182,26 @@ function StepTime({ service, date, onSelect, onBack }) {
     weekday: 'long', month: 'long', day: 'numeric',
   });
 
+  const sunset = sunsetLocal(date, STUDIO.lat, STUDIO.lng, STUDIO.tz);
+  const isGolden = (time) => {
+    if (!sunset) return false;
+    const [h, m] = time.split(':').map(Number);
+    const slotMin = h * 60 + m;
+    return slotMin >= sunset.minutes - GOLDEN_BEFORE_SUNSET && slotMin <= sunset.minutes - GOLDEN_CUTOFF;
+  };
+  const hasGolden = !!slots?.some(isGolden);
+
   return (
     <div>
       <StepHeader step={3} title={`Available times — ${displayDate}`} />
       <BackButton onClick={onBack} />
+
+      {sunset && (
+        <p className="mt-6 text-xs tracking-wide opacity-70" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+          ☀ Sunset at {sunset.display}
+          {hasGolden && ' — golden hour slots marked below'}
+        </p>
+      )}
 
       {isLoading && <div className="py-16 text-center opacity-50 text-sm">Loading…</div>}
 
@@ -189,19 +212,29 @@ function StepTime({ service, date, onSelect, onBack }) {
         </div>
       )}
 
-      <div className="mt-8 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+      <div className="mt-6 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {slots?.map((time) => {
           const [h, m] = time.split(':').map(Number);
           const period = h >= 12 ? 'PM' : 'AM';
           const display = `${h > 12 ? h - 12 : h || 12}:${String(m).padStart(2, '0')} ${period}`;
+          const golden = isGolden(time);
           return (
             <button
               key={time}
               onClick={() => onSelect(time)}
-              className="border border-current/20 px-2 py-3 text-center text-sm tracking-wide transition-all duration-200 hover:border-current/60 hover:bg-ink hover:text-paper"
+              className={`px-2 py-3 text-center text-sm tracking-wide transition-all duration-200 hover:bg-ink hover:text-paper ${
+                golden
+                  ? 'border border-accent/60 bg-accent/5 hover:border-ink'
+                  : 'border border-current/20 hover:border-current/60'
+              }`}
               style={{ fontFamily: 'var(--font-mono, monospace)' }}
             >
-              {display}
+              <span className="block">{display}</span>
+              {golden && (
+                <span className="mt-0.5 block text-[9px] uppercase tracking-[0.18em] text-accent">
+                  ☀ golden hour
+                </span>
+              )}
             </button>
           );
         })}

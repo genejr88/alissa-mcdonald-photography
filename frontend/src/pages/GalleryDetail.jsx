@@ -44,7 +44,7 @@ export default function GalleryDetail() {
       {/* Header */}
       <div className="px-6 pb-12 pt-32 md:px-12">
         <p className={`meta mb-4 ${isDark ? 'text-paper/50' : ''}`}>
-          {gallery.photos?.length ?? 0} photographs
+          Contact sheet · {gallery.photos?.length ?? 0} frames
         </p>
         <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
           {gallery.title.split(' ').map((word, i, arr) => (

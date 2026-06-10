@@ -1,6 +1,12 @@
 import { useRef, useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
+// "Darkroom develop" reveal — the photo resolves like a print in developer
+// fluid: washed-out, warm, and soft, then settles into full contrast and
+// sharpness. Filter strings must keep the same function order to interpolate.
+const UNDEVELOPED = 'blur(14px) brightness(1.4) contrast(0.65) sepia(0.35) saturate(0.65)';
+const DEVELOPED = 'blur(0px) brightness(1) contrast(1) sepia(0) saturate(1)';
+
 export default function RevealImage({ src, alt, className = '', style = {}, priority = false, onClick }) {
   const ref = useRef(null);
   const [inView, setInView] = useState(priority);
@@ -18,20 +24,23 @@ export default function RevealImage({ src, alt, className = '', style = {}, prio
 
   return (
     <div ref={ref} className={`relative overflow-hidden ${className}`} style={style} onClick={onClick}>
-      <motion.div
-        style={{ width: '100%', height: '100%' }}
-        initial={shouldReduce ? false : { clipPath: 'inset(0 0 100% 0)', scale: 1.08 }}
-        animate={inView ? { clipPath: 'inset(0 0 0% 0)', scale: 1 } : {}}
-        transition={{ duration: 0.9, ease: [0.77, 0, 0.175, 1] }}
-      >
-        <img
-          src={src}
-          alt={alt}
-          loading={priority ? 'eager' : 'lazy'}
-          className="w-full h-full object-cover"
-          style={{ display: 'block' }}
-        />
-      </motion.div>
+      <motion.img
+        src={src}
+        alt={alt}
+        loading={priority ? 'eager' : 'lazy'}
+        className="block h-full w-full object-cover"
+        initial={shouldReduce ? false : { opacity: 0, filter: UNDEVELOPED, scale: 1.03 }}
+        animate={
+          inView
+            ? { opacity: 1, filter: DEVELOPED, scale: 1 }
+            : {}
+        }
+        transition={{
+          opacity: { duration: 0.35, ease: 'easeOut' },
+          filter: { duration: 1.4, ease: [0.25, 0.1, 0.25, 1] },
+          scale: { duration: 1.4, ease: [0.25, 0.1, 0.25, 1] },
+        }}
+      />
     </div>
   );
 }
