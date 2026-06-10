@@ -39,37 +39,50 @@ function StepService({ onSelect }) {
   return (
     <div>
       <StepHeader step={1} title="Choose your session" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+      <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2">
         {services?.map((s) => (
-          <button
+          <motion.button
             key={s.id}
             onClick={() => onSelect(s)}
-            className="text-left border border-current/10 hover:border-current/30 p-8 transition-all duration-300 group"
-            style={{ background: 'transparent' }}
+            whileHover={{ y: -4 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+            className="group relative flex flex-col overflow-hidden rounded-lg border border-current/10 bg-white/40 p-7 text-left transition-colors duration-300 hover:border-current/30"
           >
-            <p className="text-xs tracking-widest uppercase opacity-60 mb-3" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
-              № {String(s.number).padStart(2, '0')}
-            </p>
-            <h3 className="font-serif text-2xl md:text-3xl mb-4 group-hover:opacity-70 transition-opacity">
-              {s.name}
-            </h3>
-            <p className="text-sm leading-relaxed opacity-60 mb-6">{s.description}</p>
+            {/* accent rail that fills on hover */}
+            <span className="absolute inset-x-0 top-0 h-0.5 origin-left scale-x-0 bg-accent/70 transition-transform duration-300 group-hover:scale-x-100" />
+
+            <div className="mb-4 flex items-baseline justify-between">
+              <span className="font-serif text-3xl opacity-30">№{String(s.number).padStart(2, '0')}</span>
+              <span className="text-[10px] uppercase tracking-[0.18em] opacity-40" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+                {s.durationMin} min
+              </span>
+            </div>
+
+            <h3 className="mb-3 font-serif text-2xl md:text-3xl">{s.name}</h3>
+            <p className="mb-6 text-sm leading-relaxed opacity-60">{s.description}</p>
+
             {s.includes && (
-              <ul className="space-y-1 mb-6">
+              <ul className="mb-6 space-y-1.5">
                 {s.includes.split('\n').filter(Boolean).map((item, i) => (
-                  <li key={i} className="text-xs tracking-widest uppercase opacity-60" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
-                    — {item}
+                  <li key={i} className="flex items-center gap-2 text-[11px] uppercase tracking-[0.12em] opacity-60" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+                    <span className="text-accent">✦</span> {item}
                   </li>
                 ))}
               </ul>
             )}
-            <p className="font-serif text-xl opacity-80">
-              From ${parseFloat(s.price).toFixed(0)}
-              {s.depositAmount && (
-                <span className="text-sm opacity-70 ml-2">(${parseFloat(s.depositAmount).toFixed(0)} deposit)</span>
-              )}
-            </p>
-          </button>
+
+            <div className="mt-auto flex items-end justify-between border-t border-current/10 pt-5">
+              <p className="font-serif text-2xl">
+                <span className="align-top text-sm opacity-50">From </span>${parseFloat(s.price).toFixed(0)}
+                {s.depositAmount && (
+                  <span className="ml-2 text-xs opacity-50">(${parseFloat(s.depositAmount).toFixed(0)} deposit)</span>
+                )}
+              </p>
+              <span className="text-sm tracking-widest opacity-40 transition-all duration-300 group-hover:translate-x-1 group-hover:opacity-90">
+                Select →
+              </span>
+            </div>
+          </motion.button>
         ))}
       </div>
     </div>
@@ -104,6 +117,7 @@ function StepDate({ service, onSelect, onBack }) {
 
   // Don't allow navigating before current month
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+  const availableCount = availableSet.size;
 
   return (
     <div>
@@ -112,24 +126,34 @@ function StepDate({ service, onSelect, onBack }) {
 
       <div className="mt-8 max-w-md">
         {/* Month nav */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-5 flex items-center justify-between">
           <button
             onClick={prevMonth}
             disabled={isCurrentMonth}
-            className="text-sm opacity-60 hover:opacity-80 disabled:opacity-20 transition-opacity px-2"
+            aria-label="Previous month"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-current/15 text-base transition-all hover:border-current/50 hover:bg-ink hover:text-paper disabled:pointer-events-none disabled:opacity-20"
           >
-            ‹ Prev
+            ‹
           </button>
-          <p className="font-serif text-xl">{MONTHS[month]} {year}</p>
-          <button onClick={nextMonth} className="text-sm opacity-60 hover:opacity-80 transition-opacity px-2">
-            Next ›
+          <div className="text-center">
+            <p className="font-serif text-2xl leading-none">{MONTHS[month]}</p>
+            <p className="mt-1 text-[10px] tracking-[0.3em] opacity-50" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+              {year}
+            </p>
+          </div>
+          <button
+            onClick={nextMonth}
+            aria-label="Next month"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-current/15 text-base transition-all hover:border-current/50 hover:bg-ink hover:text-paper"
+          >
+            ›
           </button>
         </div>
 
         {/* Day headers */}
-        <div className="grid grid-cols-7 mb-2">
+        <div className="grid grid-cols-7 border-b border-current/10 pb-2">
           {DAYS.map(d => (
-            <div key={d} className="text-center text-xs tracking-widest uppercase opacity-70 py-1" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+            <div key={d} className="py-1 text-center text-[10px] tracking-[0.15em] opacity-40" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
               {d}
             </div>
           ))}
@@ -137,35 +161,73 @@ function StepDate({ service, onSelect, onBack }) {
 
         {/* Calendar grid */}
         {isLoading ? (
-          <div className="h-48 flex items-center justify-center opacity-50 text-sm">Loading…</div>
+          <div className="grid grid-cols-7 gap-1.5 pt-2">
+            {Array.from({ length: 35 }).map((_, i) => (
+              <div key={i} className="aspect-square animate-pulse rounded-lg bg-current/[0.04]" />
+            ))}
+          </div>
         ) : (
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1.5 pt-2">
             {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
             {Array.from({ length: numDays }).map((_, i) => {
               const day = i + 1;
               const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-              const isPast = dateStr <= todayStr;
-              const isAvailable = availableSet.has(dateStr);
+              const isToday = dateStr === todayStr;
+              const isPast = dateStr < todayStr;
+              const isAvailable = availableSet.has(dateStr) && !isPast;
+
+              if (isPast || (!isAvailable && !isToday)) {
+                return (
+                  <div
+                    key={day}
+                    className="flex aspect-square items-center justify-center text-sm opacity-20"
+                  >
+                    {day}
+                  </div>
+                );
+              }
+
               return (
-                <button
+                <motion.button
                   key={day}
-                  disabled={isPast || !isAvailable}
+                  disabled={!isAvailable}
                   onClick={() => onSelect(dateStr)}
-                  className="relative h-10 w-full flex items-center justify-center text-sm transition-all duration-200 rounded-sm group"
-                  style={{
-                    opacity: isPast || !isAvailable ? 0.2 : 1,
-                    cursor: isPast || !isAvailable ? 'default' : 'pointer',
-                  }}
+                  whileHover={isAvailable ? { y: -2 } : {}}
+                  whileTap={isAvailable ? { scale: 0.92 } : {}}
+                  className={`group relative flex aspect-square flex-col items-center justify-center rounded-lg text-sm transition-colors duration-200 ${
+                    isAvailable
+                      ? 'bg-accent/[0.07] font-medium hover:bg-ink hover:text-paper'
+                      : 'cursor-default'
+                  } ${isToday ? 'ring-1 ring-inset ring-current/30' : ''}`}
                 >
-                  <span className="relative z-10">{day}</span>
-                  {isAvailable && !isPast && (
-                    <span className="absolute inset-0 rounded-full border border-current scale-0 group-hover:scale-100 transition-transform duration-200" />
+                  <span>{day}</span>
+                  {/* available marker dot — hidden on hover when tile fills */}
+                  {isAvailable && (
+                    <span className="absolute bottom-1.5 h-1 w-1 rounded-full bg-accent transition-opacity group-hover:opacity-0" />
                   )}
-                </button>
+                  {isToday && !isAvailable && (
+                    <span className="absolute bottom-1 text-[8px] uppercase tracking-wider opacity-40">today</span>
+                  )}
+                </motion.button>
               );
             })}
           </div>
         )}
+
+        {/* Legend */}
+        <div className="mt-5 flex items-center gap-5 border-t border-current/10 pt-4 text-[10px] tracking-[0.12em] opacity-50" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" /> AVAILABLE
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded ring-1 ring-inset ring-current/40" /> TODAY
+          </span>
+          {!isLoading && (
+            <span className="ml-auto normal-case tracking-normal">
+              {availableCount} {availableCount === 1 ? 'date' : 'dates'} open
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -212,20 +274,22 @@ function StepTime({ service, date, onSelect, onBack }) {
         </div>
       )}
 
-      <div className="mt-6 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+      <div className="mt-6 grid max-w-xl grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
         {slots?.map((time) => {
           const [h, m] = time.split(':').map(Number);
           const period = h >= 12 ? 'PM' : 'AM';
           const display = `${h > 12 ? h - 12 : h || 12}:${String(m).padStart(2, '0')} ${period}`;
           const golden = isGolden(time);
           return (
-            <button
+            <motion.button
               key={time}
               onClick={() => onSelect(time)}
-              className={`px-2 py-3 text-center text-sm tracking-wide transition-all duration-200 hover:bg-ink hover:text-paper ${
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className={`rounded-lg py-3 px-2 text-center text-sm tracking-wide transition-colors duration-200 hover:bg-ink hover:text-paper ${
                 golden
-                  ? 'border border-accent/60 bg-accent/5 hover:border-ink'
-                  : 'border border-current/20 hover:border-current/60'
+                  ? 'border border-accent/50 bg-accent/[0.08]'
+                  : 'border border-current/10 bg-accent/[0.04]'
               }`}
               style={{ fontFamily: 'var(--font-mono, monospace)' }}
             >
@@ -235,7 +299,7 @@ function StepTime({ service, date, onSelect, onBack }) {
                   ☀ golden hour
                 </span>
               )}
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -324,6 +388,56 @@ function Confirmed({ token, service, date, time }) {
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
+const STEP_LABELS = ['Session', 'Date', 'Time', 'Details'];
+
+function Stepper({ current }) {
+  return (
+    <div className="mb-12 flex items-center gap-2">
+      {STEP_LABELS.map((label, i) => {
+        const n = i + 1;
+        const done = n < current;
+        const active = n === current;
+        return (
+          <div key={label} className="flex flex-1 items-center gap-2 last:flex-none">
+            <div className="flex items-center gap-2.5">
+              <span
+                className={`flex h-7 w-7 items-center justify-center rounded-full border text-[11px] transition-colors duration-300 ${
+                  active
+                    ? 'border-ink bg-ink text-paper'
+                    : done
+                    ? 'border-accent/50 bg-accent/10 text-accent'
+                    : 'border-current/20 opacity-40'
+                }`}
+                style={{ fontFamily: 'var(--font-mono, monospace)' }}
+              >
+                {done ? '✓' : String(n).padStart(2, '0')}
+              </span>
+              <span
+                className={`hidden text-[10px] uppercase tracking-[0.18em] transition-opacity sm:inline ${
+                  active ? 'opacity-90' : 'opacity-40'
+                }`}
+                style={{ fontFamily: 'var(--font-mono, monospace)' }}
+              >
+                {label}
+              </span>
+            </div>
+            {n < STEP_LABELS.length && (
+              <span className="relative h-px flex-1 bg-current/15">
+                <motion.span
+                  className="absolute inset-0 origin-left bg-accent/60"
+                  initial={false}
+                  animate={{ scaleX: done ? 1 : 0 }}
+                  transition={{ duration: 0.4 }}
+                />
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function StepHeader({ step, title }) {
   return (
     <motion.div
@@ -332,8 +446,8 @@ function StepHeader({ step, title }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <p className="text-xs tracking-widest uppercase opacity-70 mb-3" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
-        Step {step} of 4
+      <p className="mb-3 text-[10px] uppercase tracking-[0.3em] text-accent" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+        № 0{step} — {STEP_LABELS[step - 1]}
       </p>
       <h2 className="font-serif" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.75rem)', lineHeight: 1.1 }}>
         {title}
@@ -385,17 +499,26 @@ export default function Book() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--paper)' }}>
-      <div className="max-w-4xl mx-auto px-6 md:px-16 pt-24 pb-24">
+      <div className="max-w-3xl mx-auto px-6 md:px-12 pt-24 pb-24">
         {/* Page title */}
-        <motion.h1
-          className="font-serif mb-12"
-          style={{ fontSize: 'clamp(2.5rem, 8vw, 7rem)', lineHeight: 0.95, letterSpacing: '-0.02em' }}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.77, 0, 0.175, 1] }}
+          className="mb-10"
         >
-          Book a Session
-        </motion.h1>
+          <p className="mb-3 text-[10px] uppercase tracking-[0.3em] opacity-50" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
+            Reserve your session
+          </p>
+          <h1
+            className="font-serif"
+            style={{ fontSize: 'clamp(2.5rem, 8vw, 6rem)', lineHeight: 0.95, letterSpacing: '-0.02em' }}
+          >
+            Book a <em className="italic">Session</em>
+          </h1>
+        </motion.div>
+
+        {!confirmed && <Stepper current={step} />}
 
         <AnimatePresence mode="wait">
           {confirmed ? (
