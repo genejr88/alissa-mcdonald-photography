@@ -1,6 +1,26 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from './lib/auth';
+import Splash from './pages/Splash';
+
+// ── Pre-launch splash gate ────────────────────────────────────────────────────
+// While true, visitors see the splash page instead of the site. Visiting /loop
+// once unlocks the full demo on that browser. Admin, contract-signing, and
+// booking-status links always bypass the gate.
+// AT LAUNCH: set this to false and the whole gate disappears.
+const SPLASH_ENABLED = true;
+
+const PREVIEW_KEY = 'amp_preview';
+
+function UnlockPreview() {
+  const navigate = useNavigate();
+  useEffect(() => {
+    localStorage.setItem(PREVIEW_KEY, '1');
+    navigate('/', { replace: true });
+  }, [navigate]);
+  return null;
+}
 import PublicLayout from './components/layout/PublicLayout';
 import AdminLayout from './components/layout/AdminLayout';
 import Home from './pages/Home';
@@ -35,9 +55,24 @@ function RequireAuth({ children }) {
 
 export default function App() {
   const location = useLocation();
+
+  // Splash gate — public pages show the splash until /loop unlocks this browser
+  const path = location.pathname;
+  const bypassesSplash =
+    path.startsWith('/admin') ||
+    path.startsWith('/sign/') ||
+    path.startsWith('/booking/') ||
+    path === '/loop';
+  const previewUnlocked =
+    typeof localStorage !== 'undefined' && localStorage.getItem(PREVIEW_KEY) === '1';
+  if (SPLASH_ENABLED && !previewUnlocked && !bypassesSplash) {
+    return <Splash />;
+  }
+
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        <Route path="/loop" element={<UnlockPreview />} />
         <Route element={<PublicLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/galleries" element={<Galleries />} />
