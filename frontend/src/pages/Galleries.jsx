@@ -72,6 +72,19 @@ export default function Galleries() {
                     {gallery._count?.photos ?? gallery.photos?.length ?? 0} frames
                   </span>
                 </div>
+
+                {/* Private badge */}
+                {gallery.locked && (
+                  <div className="absolute right-4 top-4 flex items-center gap-1.5 mix-blend-difference">
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-white/80" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                      <path d="M7.5,10.5 C7.3,7.4 8.8,5 12,4.9 C15.2,5 16.7,7.3 16.5,10.5" />
+                      <rect x="6.5" y="10.5" width="11" height="9" rx="1" />
+                    </svg>
+                    <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/80">
+                      Private
+                    </span>
+                  </div>
+                )}
               </Link>
             );
           })}

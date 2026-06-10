@@ -29,11 +29,19 @@ router.get('/', async (req, res, next) => {
         photos: { orderBy: { sortOrder: 'asc' }, take: 20 },
       },
     });
-    res.json(galleries);
+    // Never expose the password; locked galleries only reveal their cover photo
+    res.json(
+      galleries.map(({ password, photos, ...g }) => ({
+        ...g,
+        locked: !!password,
+        photos: password ? photos.slice(0, 1) : photos,
+      }))
+    );
   } catch (e) { next(e); }
 });
 
 // GET /api/galleries/:slug
+// Locked galleries require the password in the x-gallery-password header.
 router.get('/:slug', async (req, res, next) => {
   try {
     const gallery = await prisma.gallery.findUnique({
@@ -41,7 +49,22 @@ router.get('/:slug', async (req, res, next) => {
       include: { photos: { orderBy: { sortOrder: 'asc' } } },
     });
     if (!gallery || !gallery.published) return res.status(404).json({ error: 'Not found' });
-    res.json(gallery);
+
+    const { password, ...safe } = gallery;
+    if (password) {
+      const supplied = String(req.headers['x-gallery-password'] || '');
+      if (supplied !== password) {
+        return res.status(401).json({
+          locked: true,
+          wrongPassword: supplied.length > 0,
+          title: gallery.title,
+          description: gallery.description,
+          mood: gallery.mood,
+          photoCount: gallery.photos.length,
+        });
+      }
+    }
+    res.json({ ...safe, locked: !!password });
   } catch (e) { next(e); }
 });
 
@@ -64,7 +87,7 @@ router.get('/admin/list', requireAuth, async (req, res, next) => {
 // POST /api/galleries/admin
 router.post('/admin', requireAuth, async (req, res, next) => {
   try {
-    const { title, description, mood, published, watermarked } = req.body;
+    const { title, description, mood, published, watermarked, password } = req.body;
     const slug = slugify(title);
     const count = await prisma.gallery.count();
     const gallery = await prisma.gallery.create({
@@ -75,6 +98,7 @@ router.post('/admin', requireAuth, async (req, res, next) => {
         mood: mood || 'LIGHT',
         published: !!published,
         watermarked: !!watermarked,
+        password: password ? String(password).trim() : null,
         sortOrder: count,
       },
     });
@@ -85,7 +109,7 @@ router.post('/admin', requireAuth, async (req, res, next) => {
 // PUT /api/galleries/admin/:id
 router.put('/admin/:id', requireAuth, async (req, res, next) => {
   try {
-    const { title, description, mood, published, watermarked, coverPhotoId, sortOrder } = req.body;
+    const { title, description, mood, published, watermarked, coverPhotoId, sortOrder, password } = req.body;
     const data = {};
     if (title !== undefined) { data.title = title; data.slug = slugify(title); }
     if (description !== undefined) data.description = description;
@@ -94,6 +118,8 @@ router.put('/admin/:id', requireAuth, async (req, res, next) => {
     if (watermarked !== undefined) data.watermarked = watermarked;
     if (coverPhotoId !== undefined) data.coverPhotoId = coverPhotoId;
     if (sortOrder !== undefined) data.sortOrder = sortOrder;
+    // Lock with a non-empty password; empty string or null unlocks
+    if (password !== undefined) data.password = password ? String(password).trim() : null;
     const gallery = await prisma.gallery.update({ where: { id: req.params.id }, data });
     res.json(gallery);
   } catch (e) { next(e); }

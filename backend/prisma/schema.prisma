@@ -30,6 +30,7 @@ model Gallery {
   mood         GalleryMood @default(LIGHT)
   published    Boolean     @default(false)
   watermarked  Boolean     @default(false)
+  password     String? // optional access password — null means public
   sortOrder    Int         @default(0)
   coverPhotoId String?
   photos       Photo[]

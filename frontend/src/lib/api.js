@@ -78,7 +78,10 @@ export const adminDeleteContractTemplate = (id) =>
 
 // ---- Galleries (public) ----
 export const getGalleries = () => api.get('/galleries').then((r) => r.data);
-export const getGallery = (slug) => api.get(`/galleries/${slug}`).then((r) => r.data);
+export const getGallery = (slug, password) =>
+  api
+    .get(`/galleries/${slug}`, password ? { headers: { 'x-gallery-password': password } } : undefined)
+    .then((r) => r.data);
 
 // ---- Galleries (admin) ----
 export const adminGetGalleries = () => api.get('/galleries/admin/list').then((r) => r.data);

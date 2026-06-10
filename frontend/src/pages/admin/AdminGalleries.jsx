@@ -8,6 +8,8 @@ function NewGalleryModal({ onClose }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [mood, setMood] = useState('LIGHT');
+  const [locked, setLocked] = useState(false);
+  const [password, setPassword] = useState('');
 
   const create = useMutation({
     mutationFn: adminCreateGallery,
@@ -55,12 +57,40 @@ function NewGalleryModal({ onClose }) {
               <option value="DARK">Dark (charcoal background)</option>
             </select>
           </div>
+          <div className="rounded border border-gray-200 p-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={locked}
+                onChange={(e) => setLocked(e.target.checked)}
+              />
+              <span className="text-sm">🔒 Lock this gallery behind a password</span>
+            </label>
+            {locked && (
+              <div className="mt-3">
+                <label className="block text-xs tracking-widest uppercase opacity-50 mb-1">
+                  Gallery password *
+                </label>
+                <input
+                  className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="What you'll share with the client"
+                />
+                <p className="mt-1.5 text-[11px] opacity-50">
+                  Visitors will need this exact password to view the gallery.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex gap-3 mt-8">
           <button
             className="flex-1 bg-black text-white rounded py-2 text-sm tracking-widest uppercase hover:bg-gray-800 transition-colors disabled:opacity-40"
-            disabled={!title.trim() || create.isPending}
-            onClick={() => create.mutate({ title, description, mood })}
+            disabled={!title.trim() || (locked && !password.trim()) || create.isPending}
+            onClick={() =>
+              create.mutate({ title, description, mood, password: locked ? password.trim() : null })
+            }
           >
             {create.isPending ? 'Creating…' : 'Create'}
           </button>
@@ -92,6 +122,22 @@ export default function AdminGalleries() {
     mutationFn: ({ id, published }) => adminUpdateGallery(id, { published }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-galleries'] }),
   });
+
+  const setPassword = useMutation({
+    mutationFn: ({ id, password }) => adminUpdateGallery(id, { password }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-galleries'] }),
+  });
+
+  const handleLockToggle = (gallery) => {
+    if (gallery.password) {
+      if (confirm(`Unlock "${gallery.title}"? Anyone with the link will be able to view it.`)) {
+        setPassword.mutate({ id: gallery.id, password: null });
+      }
+    } else {
+      const pw = prompt(`Set a password for "${gallery.title}":`);
+      if (pw && pw.trim()) setPassword.mutate({ id: gallery.id, password: pw.trim() });
+    }
+  };
 
   const del = useMutation({
     mutationFn: adminDeleteGallery,
@@ -152,6 +198,12 @@ export default function AdminGalleries() {
                   </div>
                 </div>
 
+                {gallery.password && (
+                  <p className="mt-2 text-xs text-amber-700 bg-amber-50 rounded px-2 py-1 inline-block">
+                    🔒 Password: <span className="font-mono">{gallery.password}</span>
+                  </p>
+                )}
+
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex items-center gap-3">
                     <span className="text-xs opacity-40">{gallery._count?.photos ?? 0} photos</span>
@@ -161,6 +213,15 @@ export default function AdminGalleries() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* Lock toggle */}
+                    <button
+                      title={gallery.password ? 'Locked — click to remove password' : 'Public — click to set a password'}
+                      className={`text-xs px-2 py-1 rounded transition-colors ${gallery.password ? 'bg-amber-100 text-amber-700 hover:bg-gray-100 hover:text-gray-500' : 'bg-gray-100 text-gray-500 hover:bg-amber-100 hover:text-amber-700'}`}
+                      onClick={() => handleLockToggle(gallery)}
+                    >
+                      {gallery.password ? '🔒 Locked' : 'Lock'}
+                    </button>
+
                     {/* Published toggle */}
                     <button
                       title={gallery.published ? 'Published — click to unpublish' : 'Draft — click to publish'}
