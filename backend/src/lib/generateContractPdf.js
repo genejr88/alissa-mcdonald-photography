@@ -72,6 +72,44 @@ async function generateContractPdf(contract) {
       }
     }
 
+    // ── Client details (intake) ──────────────────────────────────────────────
+    const intake = contract.intakeData;
+    if (intake) {
+      doc.moveDown(1.5);
+      doc.moveTo(60, doc.y).lineTo(552, doc.y).strokeColor('#D4C9B0').lineWidth(0.5).stroke();
+      doc.moveDown(1);
+
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#2E2C27').text('Client Details');
+      doc.moveDown(0.5);
+
+      const row = (label, value) => {
+        doc.fontSize(10).font('Helvetica-Bold').fillColor('#2E2C27').text(`${label}: `, { continued: true });
+        doc.font('Helvetica').text(value || '—');
+        doc.moveDown(0.2);
+      };
+      row('Full Name (Parent or Guardian)', intake.guardianName);
+      row('Phone', intake.phone);
+      row('Email', intake.email);
+      row('Address', intake.address);
+
+      doc.moveDown(0.4);
+      doc.fontSize(10).font('Helvetica-Bold').text('Participants (Full Name, Age, Date of Birth):');
+      doc.moveDown(0.2);
+      for (const line of String(intake.participants || '').split('\n')) {
+        if (line.trim()) {
+          doc.fontSize(10).font('Helvetica').text(line.trim(), { lineGap: 3 });
+        }
+      }
+
+      doc.moveDown(0.6);
+      doc.fontSize(10).font('Helvetica-Bold').text('Model Release: ', { continued: true });
+      doc.font('Helvetica').text(
+        intake.modelRelease
+          ? 'GRANTED — Client grants permission to use images for promotional purposes.'
+          : 'DECLINED — Client does NOT grant permission to use images for promotional purposes.'
+      );
+    }
+
     // ── Signature section ────────────────────────────────────────────────────
     doc.moveDown(1.5);
     doc.moveTo(60, doc.y).lineTo(552, doc.y).strokeColor('#D4C9B0').lineWidth(0.5).stroke();

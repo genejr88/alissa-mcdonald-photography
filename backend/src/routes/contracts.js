@@ -3,14 +3,6 @@ const { requireAuth } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
 const { sendMail } = require('../lib/mailer');
 const { generateContractPdf } = require('../lib/generateContractPdf');
-const { v2: cloudinary } = require('cloudinary');
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-  secure: true,
-});
 
 const BASE_URL = process.env.SITE_URL || 'https://alissamcdonaldphotography.com';
 
@@ -131,12 +123,50 @@ router.get('/sign/:token', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// POST /api/contracts/sign/:token — submit signature
+// GET /api/contracts/sign/:token/pdf — download the signed contract PDF.
+// Regenerated from the contract record on every request; only available once signed.
+router.get('/sign/:token/pdf', async (req, res, next) => {
+  try {
+    const contract = await prisma.contract.findUnique({ where: { token: req.params.token } });
+    if (!contract || !contract.signedAt) {
+      return res.status(404).json({ error: 'Signed contract not found.' });
+    }
+    const pdfBuffer = await generateContractPdf(contract);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="agreement-${(contract.signerName || 'signed').replace(/[^a-z0-9 _-]/gi, '')}.pdf"`
+    );
+    res.send(pdfBuffer);
+  } catch (e) { next(e); }
+});
+
+// POST /api/contracts/sign/:token — submit signature + client details
 router.post('/sign/:token', async (req, res, next) => {
   try {
-    const { signerName, signatureData } = req.body;
+    const { signerName, signatureData, intake } = req.body;
     if (!signerName || !signatureData) {
       return res.status(400).json({ error: 'Name and signature are required.' });
+    }
+
+    // Client-filled details (parent/guardian contact, participants, model release)
+    const clean = (v, max) => String(v ?? '').trim().slice(0, max);
+    const intakeData = {
+      guardianName: clean(intake?.guardianName, 120),
+      phone: clean(intake?.phone, 40),
+      email: clean(intake?.email, 160),
+      address: clean(intake?.address, 240),
+      participants: clean(intake?.participants, 1000),
+      modelRelease: intake?.modelRelease === true,
+    };
+    const missing = ['guardianName', 'phone', 'email', 'address', 'participants'].filter(
+      (k) => !intakeData[k]
+    );
+    if (missing.length > 0) {
+      return res.status(400).json({ error: 'Please fill in all of your details before signing.' });
+    }
+    if (typeof intake?.modelRelease !== 'boolean') {
+      return res.status(400).json({ error: 'Please choose a model release option.' });
     }
 
     const contract = await prisma.contract.findUnique({
@@ -159,32 +189,17 @@ router.post('/sign/:token', async (req, res, next) => {
         signerName,
         signatureData,
         signerIp,
+        intakeData,
       },
     });
 
-    // Generate PDF in background
-    let pdfUrl = null;
-    try {
-      const pdfBuffer = await generateContractPdf(signed);
-      const upload = await new Promise((resolve, reject) => {
-        cloudinary.uploader.upload_stream(
-          {
-            resource_type: 'raw',
-            folder: 'amp-contracts',
-            public_id: `contract-${contract.id}`,
-            format: 'pdf',
-          },
-          (err, result) => { if (err) reject(err); else resolve(result); }
-        ).end(pdfBuffer);
-      });
-      pdfUrl = upload.secure_url;
-      await prisma.contract.update({ where: { id: contract.id }, data: { pdfUrl } });
-    } catch (pdfErr) {
-      console.error('PDF generation error:', pdfErr);
-    }
+    // The signed PDF is generated on demand by GET /sign/:token/pdf — no file
+    // storage needed (Cloudinary restricts public raw/PDF delivery).
+    const pdfUrl = `${BASE_URL}/api/contracts/sign/${contract.token}/pdf`;
+    await prisma.contract.update({ where: { id: contract.id }, data: { pdfUrl } });
 
-    // Email confirmation to client (if we have their email from the booking)
-    const clientEmail = contract.booking?.clientEmail;
+    // Email confirmation to client — booking email, or the one they just gave us
+    const clientEmail = contract.booking?.clientEmail || intakeData.email;
     const clientName = signerName;
     if (clientEmail) {
       sendMail({

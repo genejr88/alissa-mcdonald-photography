@@ -110,6 +110,21 @@ function SignaturePad({ onSigned, onCleared }) {
   );
 }
 
+// ── Shared field styling ──────────────────────────────────────────────────────
+function Field({ label, children }) {
+  return (
+    <div>
+      <label className="block text-xs tracking-widest uppercase opacity-60 mb-2">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const inputStyle = (filled) => ({
+  borderColor: filled ? 'var(--ink)' : 'rgba(46,44,39,0.2)',
+  color: 'var(--ink)',
+});
+
 // ── Main signing page ─────────────────────────────────────────────────────────
 export default function Sign() {
   const { token } = useParams();
@@ -119,6 +134,14 @@ export default function Sign() {
   const [agreed, setAgreed] = useState(false);
   const [done, setDone] = useState(null); // { pdfUrl }
 
+  // Client details — mirrors the session agreement intake
+  const [guardianName, setGuardianName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [participants, setParticipants] = useState('');
+  const [modelRelease, setModelRelease] = useState(null); // true | false | null
+
   const { data: contract, isLoading, isError, error } = useQuery({
     queryKey: ['contract-sign', token],
     queryFn: () => getContractForSigning(token),
@@ -126,8 +149,7 @@ export default function Sign() {
   });
 
   const submit = useMutation({
-    mutationFn: ({ signerName, signatureData }) =>
-      submitContractSignature(token, { signerName, signatureData }),
+    mutationFn: (payload) => submitContractSignature(token, payload),
     onSuccess: (data) => setDone(data),
   });
 
@@ -135,10 +157,30 @@ export default function Sign() {
     // Get data URL from canvas
     const sigEl = document.querySelector('canvas[data-sigpad]') || document.querySelector('canvas');
     const signatureData = sigEl?._getDataUrl?.() || sigEl?.toDataURL('image/png');
-    submit.mutate({ signerName, signatureData });
+    submit.mutate({
+      signerName,
+      signatureData,
+      intake: {
+        guardianName: guardianName.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        address: address.trim(),
+        participants: participants.trim(),
+        modelRelease,
+      },
+    });
   };
 
-  const canSubmit = signerName.trim().length >= 3 && hasSig && agreed && !submit.isPending;
+  const detailsComplete =
+    guardianName.trim() &&
+    phone.trim() &&
+    email.trim().includes('@') &&
+    address.trim() &&
+    participants.trim() &&
+    modelRelease !== null;
+
+  const canSubmit =
+    signerName.trim().length >= 3 && hasSig && agreed && detailsComplete && !submit.isPending;
 
   if (isLoading) return <PageShell><p className="opacity-50 text-sm animate-pulse">Loading contract…</p></PageShell>;
 
@@ -198,6 +240,101 @@ export default function Sign() {
         {/* Contract body */}
         <div className="mb-12">
           {renderMarkdown(contract.renderedBody)}
+        </div>
+
+        {/* Client details */}
+        <div className="border-t pt-10 mb-12" style={{ borderColor: 'rgba(46,44,39,0.1)' }}>
+          <h2 className="font-serif text-xl mb-2" style={{ color: 'var(--ink)' }}>Your Details</h2>
+          <p className="text-xs opacity-50 mb-8">All fields are required.</p>
+
+          <div className="grid gap-7 md:grid-cols-2">
+            <Field label="Full name (parent or guardian) *">
+              <input
+                type="text"
+                value={guardianName}
+                onChange={(e) => setGuardianName(e.target.value)}
+                placeholder="Full name"
+                className="w-full border-b bg-transparent py-2 text-base focus:outline-none transition-colors"
+                style={inputStyle(guardianName.trim())}
+              />
+            </Field>
+            <Field label="Phone number *">
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 555-5555"
+                className="w-full border-b bg-transparent py-2 text-base focus:outline-none transition-colors"
+                style={inputStyle(phone.trim())}
+              />
+            </Field>
+            <Field label="Email address *">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="w-full border-b bg-transparent py-2 text-base focus:outline-none transition-colors"
+                style={inputStyle(email.trim().includes('@'))}
+              />
+            </Field>
+            <Field label="Address *">
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="123 Nowhere St. Somewhere RB 01234"
+                className="w-full border-b bg-transparent py-2 text-base focus:outline-none transition-colors"
+                style={inputStyle(address.trim())}
+              />
+            </Field>
+          </div>
+
+          <div className="mt-7">
+            <Field label="Participants — full name, age, date of birth *">
+              <textarea
+                value={participants}
+                onChange={(e) => setParticipants(e.target.value)}
+                rows={3}
+                placeholder={'One participant per line, e.g.\nJordan Smith, 17, 03/14/2009'}
+                className="w-full border bg-transparent p-3 text-sm leading-relaxed focus:outline-none transition-colors rounded-sm"
+                style={inputStyle(participants.trim())}
+              />
+            </Field>
+          </div>
+
+          {/* Model release choice */}
+          <div className="mt-8">
+            <p className="block text-xs tracking-widest uppercase opacity-60 mb-3">Model release *</p>
+            <div className="flex flex-col gap-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="modelRelease"
+                  checked={modelRelease === true}
+                  onChange={() => setModelRelease(true)}
+                  className="mt-1 shrink-0"
+                />
+                <span className="text-sm leading-relaxed" style={{ opacity: modelRelease === true ? 1 : 0.6 }}>
+                  YES! I grant Alissa McDonald Photography permission to use my images for
+                  promotional purposes.
+                </span>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="modelRelease"
+                  checked={modelRelease === false}
+                  onChange={() => setModelRelease(false)}
+                  className="mt-1 shrink-0"
+                />
+                <span className="text-sm leading-relaxed" style={{ opacity: modelRelease === false ? 1 : 0.6 }}>
+                  I DO NOT grant Alissa McDonald Photography permission to use images for
+                  promotional purposes.
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Signing section */}

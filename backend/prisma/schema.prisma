@@ -141,6 +141,7 @@ model Contract {
   signerName    String?
   signatureData String? // base64 canvas image
   signerIp      String?
+  intakeData    Json? // client-filled details: guardian name, phone, email, address, participants, model release
   pdfUrl        String?
   createdAt     DateTime         @default(now())
 }
