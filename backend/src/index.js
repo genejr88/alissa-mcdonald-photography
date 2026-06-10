@@ -10,6 +10,8 @@ const servicesRoutes = require('./routes/services');
 const availabilityRoutes = require('./routes/availability');
 const bookingsRoutes = require('./routes/bookings');
 const contractsRoutes = require('./routes/contracts');
+const testimonialsRoutes = require('./routes/testimonials');
+const inquiriesRoutes = require('./routes/inquiries');
 
 const app = express();
 app.use(cors());
@@ -24,6 +26,8 @@ app.use('/api/services', servicesRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/bookings', bookingsRoutes);
 app.use('/api/contracts', contractsRoutes);
+app.use('/api/testimonials', testimonialsRoutes);
+app.use('/api/inquiries', inquiriesRoutes);
 
 // Serve the built frontend (single Railway service)
 const distDir = path.join(__dirname, '../../frontend/dist');

@@ -90,4 +90,20 @@ export const adminDeletePhoto = (id) =>
 export const adminReorderPhotos = (galleryId, order) =>
   api.put(`/galleries/admin/${galleryId}/photos/reorder`, { order }).then((r) => r.data);
 
+// ---- Testimonials (public) ----
+export const getTestimonials = () => api.get('/testimonials').then((r) => r.data);
+
+// ---- Testimonials (admin) ----
+export const adminGetTestimonials = () => api.get('/testimonials/admin').then((r) => r.data);
+export const adminCreateTestimonial = (data) => api.post('/testimonials/admin', data).then((r) => r.data);
+export const adminUpdateTestimonial = (id, data) => api.put(`/testimonials/admin/${id}`, data).then((r) => r.data);
+export const adminDeleteTestimonial = (id) => api.delete(`/testimonials/admin/${id}`).then((r) => r.data);
+
+// ---- Inquiries (public) ----
+export const submitInquiry = (data) => api.post('/inquiries', data).then((r) => r.data);
+
+// ---- Inquiries (admin) ----
+export const adminGetInquiries = () => api.get('/inquiries/admin').then((r) => r.data);
+export const adminUpdateInquiry = (id, data) => api.put(`/inquiries/admin/${id}`, data).then((r) => r.data);
+
 export default api;

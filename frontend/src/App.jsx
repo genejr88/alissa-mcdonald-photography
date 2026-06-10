@@ -6,6 +6,10 @@ import AdminLayout from './components/layout/AdminLayout';
 import Home from './pages/Home';
 import Galleries from './pages/Galleries';
 import GalleryDetail from './pages/GalleryDetail';
+import About from './pages/About';
+import Experience from './pages/Experience';
+import KindWords from './pages/KindWords';
+import Contact from './pages/Contact';
 import Book from './pages/Book';
 import Sign from './pages/Sign';
 import BookingToken from './pages/BookingToken';
@@ -17,6 +21,8 @@ import AdminContracts from './pages/admin/AdminContracts';
 import AdminBookings from './pages/admin/AdminBookings';
 import AdminServices from './pages/admin/AdminServices';
 import AdminAvailability from './pages/admin/AdminAvailability';
+import AdminTestimonials from './pages/admin/AdminTestimonials';
+import AdminInquiries from './pages/admin/AdminInquiries';
 import NotFound from './pages/NotFound';
 
 function RequireAuth({ children }) {
@@ -35,10 +41,13 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/galleries" element={<Galleries />} />
           <Route path="/galleries/:slug" element={<GalleryDetail />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/experience" element={<Experience />} />
+          <Route path="/kind-words" element={<KindWords />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/book" element={<Book />} />
           <Route path="/booking/:token" element={<BookingToken />} />
           <Route path="/sign/:token" element={<Sign />} />
-          {/* Phase 5+: /about, /experience, /kind-words, /contact */}
           <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/admin/login" element={<Login />} />
@@ -57,7 +66,8 @@ export default function App() {
           <Route path="bookings" element={<AdminBookings />} />
           <Route path="services" element={<AdminServices />} />
           <Route path="availability" element={<AdminAvailability />} />
-          {/* Phase 5+: testimonials, inquiries, settings */}
+          <Route path="testimonials" element={<AdminTestimonials />} />
+          <Route path="inquiries" element={<AdminInquiries />} />
         </Route>
       </Routes>
     </AnimatePresence>

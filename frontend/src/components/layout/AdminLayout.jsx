@@ -1,7 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
 
-// Admin stays plain, fast, and dense — the polish budget is spent on the public site.
 const adminNav = [
   { to: '/admin', label: 'Dashboard', end: true },
   { to: '/admin/galleries', label: 'Galleries' },
@@ -9,7 +8,8 @@ const adminNav = [
   { to: '/admin/services', label: 'Services' },
   { to: '/admin/availability', label: 'Availability' },
   { to: '/admin/contracts', label: 'Contracts' },
-  // Phase 5+: Testimonials, Inquiries, Settings
+  { to: '/admin/testimonials', label: 'Testimonials' },
+  { to: '/admin/inquiries', label: 'Inquiries' },
 ];
 
 export default function AdminLayout() {
@@ -23,10 +23,7 @@ export default function AdminLayout() {
         <div className="flex items-center gap-4">
           <span className="meta">{user?.name}</span>
           <button
-            onClick={() => {
-              logout();
-              navigate('/admin/login');
-            }}
+            onClick={() => { logout(); navigate('/admin/login'); }}
             className="link-draw meta"
           >
             Sign out
@@ -35,7 +32,7 @@ export default function AdminLayout() {
       </header>
       <div className="flex">
         <aside className="w-48 shrink-0 border-r border-ink/10 p-4">
-          <nav className="flex flex-col gap-2">
+          <nav className="flex flex-col gap-1">
             {adminNav.map((l) => (
               <NavLink
                 key={l.to}
