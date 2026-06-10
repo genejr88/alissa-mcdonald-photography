@@ -4,6 +4,39 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { getGallery } from '../lib/api';
 import RevealImage from '../components/RevealImage';
+import TornEdge from '../components/TornEdge';
+
+// The Polaroid wall — instant prints that fell out of a shoebox. Captions are
+// mood words in her handwriting, tilts are fixed so the wall feels arranged.
+const POLAROIDS = [
+  { rotate: -3.2, caption: 'golden hour', offset: 'md:mt-10' },
+  { rotate: 2.1, caption: 'the in-between', offset: 'md:mt-0' },
+  { rotate: -1.4, caption: 'almost home', offset: 'md:mt-14' },
+  { rotate: 3, caption: 'keep this one', offset: 'md:mt-4' },
+];
+
+function Polaroid({ photo, rotate, caption, offset }) {
+  return (
+    <motion.div
+      className={`w-[46%] shrink-0 md:w-56 ${offset}`}
+      initial={{ opacity: 0, y: 30, rotate: rotate * 2 }}
+      whileInView={{ opacity: 1, y: 0, rotate }}
+      viewport={{ once: true, margin: '-60px' }}
+      whileHover={{ rotate: 0, y: -8, transition: { duration: 0.25 } }}
+      transition={{ type: 'spring', stiffness: 160, damping: 17 }}
+    >
+      <div
+        className="bg-white p-3 pb-4"
+        style={{ boxShadow: '0 1px 2px rgba(35,32,25,0.1), 0 10px 28px rgba(35,32,25,0.13)' }}
+      >
+        <div className="overflow-hidden" style={{ aspectRatio: '1/1' }}>
+          <img src={photo.url} alt={photo.alt || ''} className="h-full w-full object-cover" loading="lazy" />
+        </div>
+        <p className="mt-3 text-center font-hand text-xl text-ink/75">{caption}</p>
+      </div>
+    </motion.div>
+  );
+}
 
 const lineReveal = {
   hidden: { y: '110%' },
@@ -165,6 +198,27 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Out of the darkroom — the Polaroid wall */}
+      {photos.length >= 12 && (
+        <>
+          <TornEdge />
+          <section className="bg-paper-2 px-6 pb-24 pt-16 md:px-12">
+            <div className="mb-12 flex items-end justify-between">
+              <p className="meta">№ 02 — Out of the darkroom</p>
+              <p className="hidden font-hand text-xl text-ink-soft md:block" style={{ transform: 'rotate(-1.5deg)' }}>
+                a few that never made it back in the box
+              </p>
+            </div>
+            <div className="flex flex-wrap items-start justify-center gap-6 md:gap-10">
+              {POLAROIDS.map((p, i) => (
+                <Polaroid key={p.caption} photo={photos[8 + i]} {...p} />
+              ))}
+            </div>
+          </section>
+          <TornEdge flip />
+        </>
+      )}
 
       {/* Tall hero photo strip */}
       {photos[7] && (

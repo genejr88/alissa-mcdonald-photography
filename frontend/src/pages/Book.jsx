@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getServices, getAvailableMonth, getAvailableSlots, createBooking } from '../lib/api';
 import { sunsetLocal } from '../lib/sun';
+import WaxSeal from '../components/WaxSeal';
 
 // Studio location (Trumbull, CT area) — used for golden-hour slot tagging
 const STUDIO = { lat: 41.24, lng: -73.2, tz: 'America/New_York' };
@@ -361,8 +362,10 @@ function Confirmed({ token, service, date, time }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="max-w-lg"
+      className="relative max-w-lg"
     >
+      {/* Sealed with wax — stamps down a beat after the page settles */}
+      <WaxSeal className="absolute -top-4 right-0 md:-right-6" size={92} delay={0.7} />
       <p className="text-xs tracking-widest uppercase opacity-60 mb-6" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
         Session requested
       </p>

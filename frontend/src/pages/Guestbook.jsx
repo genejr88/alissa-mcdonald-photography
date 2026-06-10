@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getGuestbook, signGuestbook } from '../lib/api';
+import { SIGNATURE } from '../lib/branding';
+import TornEdge from '../components/TornEdge';
 
 // ── The guest book ────────────────────────────────────────────────────────────
 // A scrapbook spread. Every note is a little card taped to the page — washi
@@ -32,7 +34,9 @@ function seedFrom(id) {
   return h;
 }
 
-function NoteCard({ entry, isNew = false }) {
+// NOTE: cards animate on mount, not on scroll — IntersectionObserver (and so
+// framer's whileInView) is unreliable inside CSS multi-column layouts.
+function NoteCard({ entry, isNew = false, index = 0 }) {
   const seed = seedFrom(entry.id);
   const rotate = ((seed % 100) / 100) * 5 - 2.5; // -2.5°..2.5°
   const tape = TAPES[seed % TAPES.length];
@@ -50,10 +54,9 @@ function NoteCard({ entry, isNew = false }) {
     <motion.div
       layout
       initial={isNew ? { opacity: 0, y: -24, rotate: rotate - 6, scale: 1.06 } : { opacity: 0, y: 24, rotate }}
-      whileInView={{ opacity: 1, y: 0, rotate, scale: 1 }}
-      viewport={{ once: true, margin: '-40px' }}
+      animate={{ opacity: 1, y: 0, rotate, scale: 1 }}
       whileHover={{ rotate: 0, y: -6, transition: { duration: 0.25 } }}
-      transition={{ type: 'spring', stiffness: 190, damping: 18 }}
+      transition={{ type: 'spring', stiffness: 190, damping: 18, delay: isNew ? 0 : Math.min(index * 0.06, 0.5) }}
       className="relative break-inside-avoid"
       style={{ rotate }}
     >
@@ -96,6 +99,40 @@ function NoteCard({ entry, isNew = false }) {
           <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-ink-soft/60">
             {date}
           </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// The first note in the book is hers — pinned, never moves, signed for real.
+function HostNote() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24, rotate: 1.6 }}
+      animate={{ opacity: 1, y: 0, rotate: 1.6 }}
+      transition={{ duration: 0.6, ease: [0.77, 0, 0.175, 1] }}
+      className="relative break-inside-avoid"
+    >
+      <div
+        className="relative px-6 pb-5 pt-8"
+        style={{
+          background: '#FDF9F3',
+          boxShadow: '0 1px 2px rgba(35,32,25,0.08), 0 8px 24px rgba(35,32,25,0.08)',
+        }}
+      >
+        <span
+          aria-hidden
+          className="absolute -top-3 left-1/2 h-6 w-24 -translate-x-1/2"
+          style={{ background: TAPES[0], transform: 'translateX(-50%) rotate(-3deg)' }}
+        />
+        <p className="meta mb-3 opacity-60">From me</p>
+        <p className="font-hand text-[1.45rem] leading-[1.35] text-ink">
+          Thank you for being here — whether I&rsquo;ve photographed you or you just wandered in,
+          this page is yours too.
+        </p>
+        <div className="mt-4 border-t border-ink/[0.07] pt-3">
+          <img src={SIGNATURE} alt="Alissa" className="h-8 w-auto opacity-80" />
         </div>
       </div>
     </motion.div>
@@ -280,26 +317,31 @@ export default function Guestbook() {
         <WriteCard onSigned={handleSigned} />
       </section>
 
-      {/* The spread */}
-      <section className="px-6 pb-28 md:px-12">
+      {/* The spread — a paper-2 page with deckled edges */}
+      <TornEdge />
+      <section className="bg-paper-2 px-6 pb-28 pt-16 md:px-12">
         {isLoading ? (
           <p className="meta text-center">Opening the book…</p>
-        ) : entries.length === 0 ? (
-          <div className="mx-auto max-w-sm text-center">
-            <p className="font-hand text-2xl text-ink-soft" style={{ transform: 'rotate(-1.5deg)' }}>
-              The first page is blank — be the one who starts it ♥
-            </p>
-          </div>
         ) : (
           <div className="mx-auto max-w-6xl columns-1 gap-8 sm:columns-2 lg:columns-3 [&>*]:mb-8">
+            <HostNote />
             <AnimatePresence>
-              {entries.map((e) => (
-                <NoteCard key={e.id} entry={e} isNew={e.id === justSignedId} />
+              {entries.map((e, i) => (
+                <NoteCard key={e.id} entry={e} index={i} isNew={e.id === justSignedId} />
               ))}
             </AnimatePresence>
           </div>
         )}
+        {!isLoading && entries.length === 0 && (
+          <p
+            className="mt-4 text-center font-hand text-2xl text-ink-soft"
+            style={{ transform: 'rotate(-1.5deg)' }}
+          >
+            The rest of the page is blank — be the one who starts it ♥
+          </p>
+        )}
       </section>
+      <TornEdge flip />
     </motion.div>
   );
 }
