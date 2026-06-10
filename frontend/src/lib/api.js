@@ -82,6 +82,13 @@ export const getGallery = (slug, password) =>
   api
     .get(`/galleries/${slug}`, password ? { headers: { 'x-gallery-password': password } } : undefined)
     .then((r) => r.data);
+export const downloadGalleryZip = (slug, password) =>
+  api
+    .get(`/galleries/${slug}/download`, {
+      responseType: 'blob',
+      ...(password ? { headers: { 'x-gallery-password': password } } : {}),
+    })
+    .then((r) => r.data);
 
 // ---- Galleries (admin) ----
 export const adminGetGalleries = () => api.get('/galleries/admin/list').then((r) => r.data);

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getGallery } from '../lib/api';
+import { getGallery, downloadGalleryZip } from '../lib/api';
 import EditorialGrid from '../components/EditorialGrid';
 import Lightbox from '../components/Lightbox';
 
@@ -87,6 +87,48 @@ function PasswordGate({ slug, lockedInfo, wrongPassword, onSubmit, checking }) {
 
 const pwKey = (slug) => `amp_gpw_${slug}`;
 
+// "Download all" — fetches the zip (with the gallery password if needed) and
+// hands it to the browser as a normal file download.
+function DownloadAllButton({ slug, password, count, isDark }) {
+  const [state, setState] = useState('idle'); // idle | working | error
+
+  const handleDownload = async () => {
+    setState('working');
+    try {
+      const blob = await downloadGalleryZip(slug, password || undefined);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${slug}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      setState('idle');
+    } catch (e) {
+      console.error(e);
+      setState('error');
+    }
+  };
+
+  return (
+    <span className="inline-flex items-baseline gap-3">
+      <button
+        onClick={handleDownload}
+        disabled={state === 'working'}
+        className={`link-draw meta transition-opacity disabled:opacity-50 ${isDark ? 'text-paper/60' : ''}`}
+      >
+        {state === 'working' ? `Packing ${count} frames…` : `Download all ↓`}
+      </button>
+      {state === 'error' && (
+        <span className={`font-hand text-lg ${isDark ? 'text-paper/70' : ''}`} style={!isDark ? { color: '#A4533F' } : undefined}>
+          that didn&rsquo;t work — try again?
+        </span>
+      )}
+    </span>
+  );
+}
+
 export default function GalleryDetail() {
   const { slug } = useParams();
   const [lightboxIdx, setLightboxIdx] = useState(null);
@@ -143,9 +185,17 @@ export default function GalleryDetail() {
     >
       {/* Header */}
       <div className="px-6 pb-12 pt-32 md:px-12">
-        <p className={`meta mb-4 ${isDark ? 'text-paper/50' : ''}`}>
-          Contact sheet · {gallery.photos?.length ?? 0} frames
-        </p>
+        <div className={`mb-4 flex flex-wrap items-baseline gap-x-6 gap-y-2 ${isDark ? 'text-paper/50' : ''}`}>
+          <p className="meta inline">Contact sheet · {gallery.photos?.length ?? 0} frames</p>
+          {(gallery.photos?.length ?? 0) > 0 && (
+            <DownloadAllButton
+              slug={slug}
+              password={password}
+              count={gallery.photos.length}
+              isDark={isDark}
+            />
+          )}
+        </div>
         <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
           {gallery.title.split(' ').map((word, i, arr) => (
             <span
@@ -182,10 +232,18 @@ export default function GalleryDetail() {
       <EditorialGrid photos={gallery.photos ?? []} onOpen={openLightbox} />
 
       {/* Footer nav */}
-      <div className="px-6 pb-24 pt-8 md:px-12">
+      <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3 px-6 pb-24 pt-8 md:px-12">
         <Link to="/galleries" className={`link-draw meta ${isDark ? 'text-paper/50' : ''}`}>
           ← All galleries
         </Link>
+        {(gallery.photos?.length ?? 0) > 0 && (
+          <DownloadAllButton
+            slug={slug}
+            password={password}
+            count={gallery.photos.length}
+            isDark={isDark}
+          />
+        )}
       </div>
 
       {/* Lightbox */}

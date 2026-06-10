@@ -1,4 +1,6 @@
 const router = require('express').Router();
+const { Readable } = require('stream');
+const archiver = require('archiver');
 const { requireAuth } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
 const { v2: cloudinary } = require('cloudinary');
@@ -66,6 +68,56 @@ router.get('/:slug', async (req, res, next) => {
     }
     res.json({ ...safe, locked: !!password });
   } catch (e) { next(e); }
+});
+
+// GET /api/galleries/:slug/download — stream the whole gallery as a zip.
+// Locked galleries require the same x-gallery-password header as viewing.
+router.get('/:slug/download', async (req, res, next) => {
+  try {
+    const gallery = await prisma.gallery.findUnique({
+      where: { slug: req.params.slug },
+      include: { photos: { orderBy: { sortOrder: 'asc' } } },
+    });
+    if (!gallery || !gallery.published) return res.status(404).json({ error: 'Not found' });
+    if (gallery.password) {
+      const supplied = String(req.headers['x-gallery-password'] || '');
+      if (supplied !== gallery.password) {
+        return res.status(401).json({ locked: true, error: 'Password required.' });
+      }
+    }
+    if (gallery.photos.length === 0) {
+      return res.status(404).json({ error: 'This gallery has no photos yet.' });
+    }
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${gallery.slug}.zip"`);
+
+    // JPEGs are already compressed — store-only keeps the stream fast
+    const archive = archiver('zip', { zlib: { level: 0 } });
+    archive.on('error', (err) => {
+      console.error('Gallery zip error:', err);
+      res.destroy();
+    });
+    archive.pipe(res);
+
+    const pad = String(gallery.photos.length).length;
+    for (let i = 0; i < gallery.photos.length; i++) {
+      const photo = gallery.photos[i];
+      const ext = (photo.url.match(/\.(jpe?g|png|webp|heic)(?:$|\?)/i)?.[1] || 'jpg').toLowerCase();
+      const name = `${gallery.slug}-${String(i + 1).padStart(Math.max(pad, 2), '0')}.${ext}`;
+      const imgRes = await fetch(photo.url);
+      if (!imgRes.ok || !imgRes.body) {
+        console.error(`Zip: skipping ${photo.url} (${imgRes.status})`);
+        continue;
+      }
+      archive.append(Readable.fromWeb(imgRes.body), { name });
+    }
+    await archive.finalize();
+  } catch (e) {
+    if (!res.headersSent) return next(e);
+    console.error('Gallery zip failed mid-stream:', e);
+    res.destroy();
+  }
 });
 
 // ── Admin: galleries ──────────────────────────────────────────────────────────
