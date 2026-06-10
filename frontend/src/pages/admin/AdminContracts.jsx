@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   adminGetContracts,
@@ -8,6 +8,8 @@ import {
   adminSendContract,
   adminGetBookings,
 } from '../../lib/api';
+import { renderMarkdown } from '../../lib/contractMarkdown';
+import { LOGO_DARK } from '../../lib/branding';
 
 const SITE_URL = 'https://alissamcdonaldphotography.com';
 
@@ -204,14 +206,101 @@ function SendModal({ templates, bookings, onClose, onSent }) {
 }
 
 // ── Template editor ───────────────────────────────────────────────────────────
+
+const MERGE_FIELDS = [
+  { token: '{{client_name}}', label: 'Client name', sample: 'Jane Smith' },
+  { token: '{{session_type}}', label: 'Session type', sample: 'The Full Session' },
+  { token: '{{session_date}}', label: 'Session date', sample: 'Saturday, July 18, 2026' },
+  { token: '{{price}}', label: 'Price', sample: '$200' },
+  { token: '{{deposit}}', label: 'Deposit', sample: '$50' },
+];
+
+const STARTER_TEMPLATE = `# Photography Services Agreement
+
+This agreement is between **Alissa McDonald Photography** ("Photographer") and **{{client_name}}** ("Client") for the session described below.
+
+**Session:** {{session_type}}
+**Date:** {{session_date}}
+**Session fee:** {{price}}
+**Deposit due to confirm:** {{deposit}}
+
+## 1. Booking & Payment
+A deposit is required to confirm your session date. The remaining balance is due on or before the session date.
+
+## 2. Cancellation & Rescheduling
+Client may reschedule with at least 48 hours notice. Deposits are non-refundable but may be applied to one rescheduled session within 90 days.
+
+## 3. Image Delivery
+Edited images are delivered via a private online gallery. Photographer selects and edits images in her artistic style; unedited files are not provided.
+
+## 4. Copyright & Usage
+Photographer retains copyright. Client receives a personal-use license to download, print, and share delivered images.
+
+## 5. Model Release
+Client grants Photographer permission to use session images for portfolio, website, and social media unless otherwise agreed in writing.
+
+By signing below, Client agrees to the terms above.`;
+
+// Substitute merge tokens with ⟦sample⟧ markers the preview renderer highlights
+function withSampleData(body) {
+  let out = body;
+  for (const f of MERGE_FIELDS) {
+    out = out.split(f.token).join(`⟦${f.sample}⟧`);
+  }
+  return out;
+}
+
 function TemplateEditor({ template, onSave, onCancel, isPending }) {
   const [name, setName] = useState(template?.name || '');
   const [body, setBody] = useState(template?.body || '');
+  const [mobileView, setMobileView] = useState('write'); // write | preview (below lg)
+  const textareaRef = useRef(null);
+
+  // Insert text at the caret and restore focus
+  function insertAtCursor(text) {
+    const ta = textareaRef.current;
+    if (!ta) return setBody((b) => b + text);
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const next = body.slice(0, start) + text + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.selectionStart = ta.selectionEnd = start + text.length;
+    });
+  }
+
+  // Wrap the current selection (e.g. bold), or insert placeholder
+  function wrapSelection(prefix, suffix, placeholder) {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = body.slice(start, end) || placeholder;
+    const next = body.slice(0, start) + prefix + selected + suffix + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      ta.selectionStart = start + prefix.length;
+      ta.selectionEnd = start + prefix.length + selected.length;
+    });
+  }
+
+  // Insert a new section heading on its own line
+  function insertSection() {
+    const ta = textareaRef.current;
+    const atLineStart = !ta || ta.selectionStart === 0 || body[ta.selectionStart - 1] === '\n';
+    insertAtCursor(`${atLineStart ? '' : '\n\n'}## New Section\n`);
+  }
+
+  const toolbarBtn =
+    'rounded border border-gray-200 px-2.5 py-1.5 text-xs hover:bg-gray-50 transition-colors';
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg p-6">
+    <div className="bg-white border border-gray-100 rounded-lg p-5">
+      {/* Name */}
       <div className="mb-4">
-        <label className="block text-xs uppercase tracking-wide opacity-40 mb-1">Template Name</label>
+        <label className="block text-xs uppercase tracking-wide opacity-50 mb-1">Template Name</label>
         <input
           className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400"
           value={name}
@@ -219,17 +308,112 @@ function TemplateEditor({ template, onSave, onCancel, isPending }) {
           placeholder="e.g. Standard Photography Agreement"
         />
       </div>
-      <div className="mb-3">
-        <label className="block text-xs uppercase tracking-wide opacity-40 mb-1">Contract Body (Markdown)</label>
-        <p className="text-xs opacity-30 mb-2">Merge fields: {'{{client_name}}'} {'{{session_type}}'} {'{{session_date}}'} {'{{price}}'} {'{{deposit}}'}</p>
-        <textarea
-          className="w-full border border-gray-200 rounded px-3 py-2 text-sm font-mono focus:outline-none focus:ring-1 focus:ring-gray-400 resize-none"
-          rows={20}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-        />
+
+      {/* Toolbar */}
+      <div className="mb-3 space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] uppercase tracking-widest opacity-50 mr-1">Auto-fill fields</span>
+          {MERGE_FIELDS.map((f) => (
+            <button
+              key={f.token}
+              type="button"
+              onClick={() => insertAtCursor(f.token)}
+              title={`Inserts ${f.token} — replaced with the real value when you send`}
+              className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs text-amber-800 hover:bg-amber-100 transition-colors"
+            >
+              + {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] uppercase tracking-widest opacity-50 mr-1">Formatting</span>
+          <button type="button" onClick={insertSection} className={toolbarBtn}>
+            ¶ Section heading
+          </button>
+          <button
+            type="button"
+            onClick={() => wrapSelection('**', '**', 'bold text')}
+            className={`${toolbarBtn} font-bold`}
+          >
+            B Bold
+          </button>
+          {/* Mobile-only write/preview toggle */}
+          <div className="ml-auto flex gap-1 lg:hidden">
+            {[['write', 'Write'], ['preview', 'Preview']].map(([v, l]) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setMobileView(v)}
+                className={`rounded px-3 py-1.5 text-xs ${mobileView === v ? 'bg-black text-white' : 'border border-gray-200'}`}
+              >
+                {l}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-      <div className="flex gap-3">
+
+      {/* Editor + live preview */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className={`${mobileView === 'write' ? 'block' : 'hidden'} lg:block`}>
+          {!body.trim() && (
+            <button
+              type="button"
+              onClick={() => setBody(STARTER_TEMPLATE)}
+              className="mb-2 w-full rounded border border-dashed border-gray-300 px-3 py-2 text-xs text-gray-500 hover:border-gray-400 hover:text-gray-700 transition-colors"
+            >
+              ✦ Start from the standard agreement
+            </button>
+          )}
+          <textarea
+            ref={textareaRef}
+            className="w-full resize-none rounded border border-gray-200 px-3 py-2 font-mono text-[13px] leading-relaxed focus:outline-none focus:ring-1 focus:ring-gray-400"
+            rows={26}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder={'# Title\n\nWrite your contract here. Click the buttons above to insert auto-fill fields and section headings.'}
+          />
+        </div>
+
+        {/* Live preview — exactly what the client sees on the signing page */}
+        <div className={`${mobileView === 'preview' ? 'block' : 'hidden'} lg:block`}>
+          <div className="mb-2 flex items-center justify-between">
+            <p className="text-[10px] uppercase tracking-widest opacity-50">
+              Live preview — what your client sees
+            </p>
+            <p className="text-[10px] opacity-50">
+              <mark className="rounded bg-accent/15 px-1">highlighted</mark> = filled in automatically
+            </p>
+          </div>
+          <div
+            className="h-[520px] overflow-y-auto rounded border border-gray-200 px-6 py-6"
+            style={{ background: 'var(--paper)' }}
+          >
+            <img src={LOGO_DARK} alt="" className="mb-4 h-12 w-auto" />
+            <div className="border-b pb-4 mb-2" style={{ borderColor: 'rgba(46,44,39,0.1)' }} />
+            {body.trim() ? (
+              renderMarkdown(withSampleData(body))
+            ) : (
+              <p className="text-sm italic opacity-40">Start typing to see the preview…</p>
+            )}
+            {body.trim() && (
+              <div className="mt-10 border-t pt-6" style={{ borderColor: 'rgba(46,44,39,0.1)' }}>
+                <p className="font-serif text-lg mb-4" style={{ color: 'var(--ink)' }}>Sign Below</p>
+                <p className="font-serif text-2xl italic opacity-40" style={{ color: 'var(--ink)' }}>
+                  Jane Smith
+                </p>
+                <div className="mt-1 h-px w-56" style={{ background: 'rgba(46,44,39,0.25)' }} />
+                <p className="mt-2 text-[10px] uppercase tracking-widest opacity-40">
+                  Client signs here on their phone or computer
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="mt-4 flex gap-3">
         <button
           disabled={!name || !body || isPending}
           onClick={() => onSave({ name, body })}
@@ -267,7 +451,7 @@ export default function AdminContracts() {
   });
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-serif text-3xl">Contracts</h1>
         <button

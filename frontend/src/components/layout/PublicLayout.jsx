@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { LOGO_DARK, LOGO_WHITE } from '../../lib/branding';
 
 const navLinks = [
   { to: '/galleries', label: 'Galleries' },
@@ -23,8 +24,12 @@ export default function PublicLayout() {
     <div className="flex min-h-screen flex-col">
       <header className="fixed inset-x-0 top-0 z-50 mix-blend-difference">
         <nav className="flex items-center justify-between px-6 py-5 md:px-12">
-          <Link to="/" className="font-display text-lg tracking-tight text-white">
-            Alissa McDonald
+          <Link to="/" className="block">
+            <img
+              src={LOGO_WHITE}
+              alt="Alissa McDonald Photography"
+              className="h-9 w-auto md:h-10"
+            />
           </Link>
 
           {/* Desktop nav */}
@@ -83,6 +88,11 @@ export default function PublicLayout() {
               exit={{ x: '100%' }}
               transition={{ type: 'tween', duration: 0.35, ease: [0.77, 0, 0.175, 1] }}
             >
+              <img
+                src={LOGO_WHITE}
+                alt="Alissa McDonald Photography"
+                className="mb-10 h-12 w-auto self-start opacity-90"
+              />
               <nav className="flex flex-col gap-6">
                 {navLinks.map((l, i) => (
                   <motion.div
@@ -133,8 +143,12 @@ export default function PublicLayout() {
       <footer className="px-6 pb-10 pt-24 md:px-12">
         <div className="flex flex-col gap-6 border-t border-ink/10 pt-8 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="font-display text-2xl">Alissa McDonald</p>
-            <p className="meta mt-1">Moments that feel like you</p>
+            <img
+              src={LOGO_DARK}
+              alt="Alissa McDonald Photography"
+              className="h-14 w-auto"
+            />
+            <p className="meta mt-2">Moments that feel like you</p>
           </div>
           <div className="flex gap-8">
             <a

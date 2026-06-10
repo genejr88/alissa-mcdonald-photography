@@ -1,4 +1,8 @@
 const PDFDocument = require('pdfkit');
+const path = require('path');
+const fs = require('fs');
+
+const LOGO_PATH = path.join(__dirname, '../assets/logo.png'); // 800x229, dark ink on transparent
 
 function parseMarkdownLines(md) {
   return md.split('\n').map((line) => {
@@ -24,12 +28,19 @@ async function generateContractPdf(contract) {
     doc.on('error', reject);
 
     // ── Header ───────────────────────────────────────────────────────────────
-    doc
-      .fontSize(20)
-      .font('Helvetica-Bold')
-      .fillColor('#2E2C27')
-      .text('Alissa McDonald Photography', { align: 'center' });
-    doc.moveDown(0.2);
+    if (fs.existsSync(LOGO_PATH)) {
+      const logoW = 200;
+      const logoH = logoW * (229 / 800);
+      doc.image(LOGO_PATH, (612 - logoW) / 2, doc.y, { width: logoW });
+      doc.y += logoH + 8;
+    } else {
+      doc
+        .fontSize(20)
+        .font('Helvetica-Bold')
+        .fillColor('#2E2C27')
+        .text('Alissa McDonald Photography', { align: 'center' });
+      doc.moveDown(0.2);
+    }
     doc
       .fontSize(9)
       .font('Helvetica')

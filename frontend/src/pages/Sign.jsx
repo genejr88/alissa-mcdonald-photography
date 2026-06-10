@@ -3,39 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getContractForSigning, submitContractSignature } from '../lib/api';
-
-// ── Markdown renderer ─────────────────────────────────────────────────────────
-function renderMarkdown(md) {
-  const lines = md.split('\n');
-  const elements = [];
-  let key = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    if (line.startsWith('# ')) {
-      elements.push(<h1 key={key++} className="font-serif text-2xl md:text-3xl mt-8 mb-3" style={{ color: 'var(--ink)' }}>{line.slice(2)}</h1>);
-    } else if (line.startsWith('## ')) {
-      elements.push(<h2 key={key++} className="font-serif text-lg md:text-xl mt-6 mb-2 font-semibold" style={{ color: 'var(--ink)' }}>{line.slice(3)}</h2>);
-    } else if (line.startsWith('### ')) {
-      elements.push(<h3 key={key++} className="text-base font-semibold mt-4 mb-1" style={{ color: 'var(--ink)' }}>{line.slice(4)}</h3>);
-    } else if (line.trim() === '') {
-      elements.push(<div key={key++} className="h-3" />);
-    } else {
-      // Inline bold
-      const parts = line.split(/(\*\*[^*]+\*\*)/g);
-      elements.push(
-        <p key={key++} className="text-sm leading-relaxed mb-1" style={{ color: 'var(--ink)' }}>
-          {parts.map((part, pi) =>
-            part.startsWith('**') && part.endsWith('**')
-              ? <strong key={pi}>{part.slice(2, -2)}</strong>
-              : part
-          )}
-        </p>
-      );
-    }
-  }
-  return elements;
-}
+import { renderMarkdown } from '../lib/contractMarkdown';
+import { LOGO_DARK } from '../lib/branding';
 
 // ── Canvas signature pad ──────────────────────────────────────────────────────
 function SignaturePad({ onSigned, onCleared }) {
@@ -213,9 +182,11 @@ export default function Sign() {
       <div className="max-w-3xl mx-auto px-6 md:px-10 pt-20 pb-32">
         {/* Header */}
         <div className="mb-8 pb-6 border-b" style={{ borderColor: 'rgba(46,44,39,0.1)' }}>
-          <p className="text-xs tracking-widest uppercase opacity-60 mb-2" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
-            Alissa McDonald Photography
-          </p>
+          <img
+            src={LOGO_DARK}
+            alt="Alissa McDonald Photography"
+            className="mb-5 h-14 w-auto md:h-16"
+          />
           <h1 className="font-serif" style={{ fontSize: 'clamp(1.8rem, 5vw, 3rem)', lineHeight: 1.05, color: 'var(--ink)' }}>
             Photography Services Agreement
           </h1>

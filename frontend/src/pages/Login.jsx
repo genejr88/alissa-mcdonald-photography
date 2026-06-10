@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth';
+import { LOGO_DARK } from '../lib/branding';
 
 export default function Login() {
   const { login } = useAuth();
@@ -27,8 +28,8 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-paper px-6">
       <form onSubmit={submit} className="w-full max-w-sm">
+        <img src={LOGO_DARK} alt="Alissa McDonald Photography" className="mb-8 h-16 w-auto" />
         <h1 className="font-display text-3xl">Studio sign in</h1>
-        <p className="meta mt-2">Alissa McDonald Photography</p>
 
         <label className="meta mt-10 block">Username or email</label>
         <input
