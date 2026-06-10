@@ -6,10 +6,12 @@ import AdminLayout from './components/layout/AdminLayout';
 import Home from './pages/Home';
 import Galleries from './pages/Galleries';
 import GalleryDetail from './pages/GalleryDetail';
+import Contract from './pages/Contract';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminGalleries from './pages/admin/AdminGalleries';
 import AdminGalleryDetail from './pages/admin/AdminGalleryDetail';
+import AdminContracts from './pages/admin/AdminContracts';
 import NotFound from './pages/NotFound';
 
 function RequireAuth({ children }) {
@@ -28,6 +30,7 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/galleries" element={<Galleries />} />
           <Route path="/galleries/:slug" element={<GalleryDetail />} />
+          <Route path="/contract" element={<Contract />} />
           {/* Phase 3+: /about, /experience, /kind-words, /book, /contact,
               /sign/:token, /booking/:token */}
           <Route path="*" element={<NotFound />} />
@@ -44,8 +47,8 @@ export default function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="galleries" element={<AdminGalleries />} />
           <Route path="galleries/:id" element={<AdminGalleryDetail />} />
-          {/* Phase 3+: services, availability, bookings, contracts,
-              testimonials, inquiries, settings */}
+          <Route path="contracts" element={<AdminContracts />} />
+          {/* Phase 3+: services, availability, bookings, testimonials, inquiries, settings */}
         </Route>
       </Routes>
     </AnimatePresence>
