@@ -6,8 +6,8 @@ import AdminLayout from './components/layout/AdminLayout';
 import Home from './pages/Home';
 import Galleries from './pages/Galleries';
 import GalleryDetail from './pages/GalleryDetail';
-import Contract from './pages/Contract';
 import Book from './pages/Book';
+import Sign from './pages/Sign';
 import BookingToken from './pages/BookingToken';
 import Login from './pages/Login';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -35,9 +35,9 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/galleries" element={<Galleries />} />
           <Route path="/galleries/:slug" element={<GalleryDetail />} />
-          <Route path="/contract" element={<Contract />} />
           <Route path="/book" element={<Book />} />
           <Route path="/booking/:token" element={<BookingToken />} />
+          <Route path="/sign/:token" element={<Sign />} />
           {/* Phase 5+: /about, /experience, /kind-words, /contact */}
           <Route path="*" element={<NotFound />} />
         </Route>

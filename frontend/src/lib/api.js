@@ -54,6 +54,21 @@ export const cancelBookingByToken = (token) => api.post(`/bookings/token/${token
 export const adminGetBookings = (params) => api.get('/bookings/admin', { params }).then((r) => r.data);
 export const adminUpdateBooking = (id, data) => api.put(`/bookings/admin/${id}`, data).then((r) => r.data);
 
+// ---- Contracts (public signing) ----
+export const getContractForSigning = (token) => api.get(`/contracts/sign/${token}`).then((r) => r.data);
+export const submitContractSignature = (token, data) =>
+  api.post(`/contracts/sign/${token}`, data).then((r) => r.data);
+
+// ---- Contracts (admin) ----
+export const adminGetContracts = () => api.get('/contracts/admin').then((r) => r.data);
+export const adminSendContract = (data) => api.post('/contracts/send', data).then((r) => r.data);
+export const adminGetContractTemplates = () => api.get('/contracts/templates').then((r) => r.data);
+export const adminCreateContractTemplate = (data) => api.post('/contracts/templates', data).then((r) => r.data);
+export const adminUpdateContractTemplate = (id, data) =>
+  api.put(`/contracts/templates/${id}`, data).then((r) => r.data);
+export const adminDeleteContractTemplate = (id) =>
+  api.delete(`/contracts/templates/${id}`).then((r) => r.data);
+
 // ---- Galleries (public) ----
 export const getGalleries = () => api.get('/galleries').then((r) => r.data);
 export const getGallery = (slug) => api.get(`/galleries/${slug}`).then((r) => r.data);
