@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getGuestbook, signGuestbook } from '../lib/api';
-import { SIGNATURE } from '../lib/branding';
+import { SIGNATURE, HAND_WELCOME, HAND_THANKYOU } from '../lib/branding';
 import TornEdge from '../components/TornEdge';
 
 // ── The guest book ────────────────────────────────────────────────────────────
@@ -144,6 +144,7 @@ function WriteCard({ onSigned }) {
   const [message, setMessage] = useState('');
   const [pen, setPen] = useState(PENS[0].hex);
   const [error, setError] = useState('');
+  const [thanked, setThanked] = useState(false);
 
   const mutation = useMutation({
     mutationFn: signGuestbook,
@@ -151,6 +152,8 @@ function WriteCard({ onSigned }) {
       setName('');
       setMessage('');
       setError('');
+      setThanked(true);
+      setTimeout(() => setThanked(false), 5000);
       onSigned(entry);
     },
     onError: (err) => {
@@ -275,6 +278,21 @@ function WriteCard({ onSigned }) {
             </p>
           )}
         </form>
+
+        {/* Her real "Thank you!" — appears after a note is taped down */}
+        <AnimatePresence>
+          {thanked && (
+            <motion.img
+              src={HAND_THANKYOU}
+              alt="Thank you!"
+              className="pointer-events-none absolute -bottom-7 right-6 h-14 w-auto"
+              initial={{ opacity: 0, y: 8, rotate: -4 }}
+              animate={{ opacity: 0.9, y: 0, rotate: -4 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+            />
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );
@@ -303,6 +321,16 @@ export default function Guestbook() {
       {/* Header */}
       <div className="px-6 pb-4 pt-32 md:px-12">
         <p className="meta mb-4">№ 06 — Guest book</p>
+        {/* "Welcome" — her actual handwriting */}
+        <motion.img
+          src={HAND_WELCOME}
+          alt="Welcome"
+          className="mb-3 h-10 w-auto md:h-12"
+          style={{ transform: 'rotate(-2deg)' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.85 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        />
         <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
           Sign the <em className="italic">guest book</em>.
         </h1>

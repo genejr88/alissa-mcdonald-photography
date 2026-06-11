@@ -120,6 +120,14 @@ export default function Splash() {
         SOMETHING BEAUTIFUL IS COMING SOON! <span style={{ color: PINK }}>♥</span>
       </p>
 
+      {/* Her handwriting, her words */}
+      <img
+        src="https://res.cloudinary.com/dxngcapcj/image/upload/amp-brand/hand-tagline.png"
+        alt="Capturing moments, one click at a time"
+        className="mt-7 h-14 w-auto opacity-80 sm:h-16"
+        style={{ transform: 'rotate(-1.5deg)' }}
+      />
+
       {/* Camera doodle */}
       <div className="mt-8">
         <CameraDoodle />

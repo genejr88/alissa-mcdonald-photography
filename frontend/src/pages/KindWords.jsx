@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { getTestimonials, getGallery } from '../lib/api';
 import RevealImage from '../components/RevealImage';
+import { HAND_PERFECT } from '../lib/branding';
 
 export default function KindWords() {
   const { data: testimonials = [] } = useQuery({
@@ -26,9 +27,21 @@ export default function KindWords() {
       {/* Header */}
       <div className="px-6 pb-12 pt-32 md:px-12">
         <p className="meta mb-4">№ 03 — Kind words</p>
-        <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
-          What clients <em className="italic">say</em>.
-        </h1>
+        <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
+          <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
+            What clients <em className="italic">say</em>.
+          </h1>
+          {/* "Perfect !" — her own handwriting, like a note on the margin */}
+          <motion.img
+            src={HAND_PERFECT}
+            alt="Perfect!"
+            className="mb-2 h-10 w-auto md:h-12"
+            style={{ transform: 'rotate(-4deg)' }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 0.75, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.6 }}
+          />
+        </div>
       </div>
 
       {/* Testimonials */}

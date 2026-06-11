@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getContractForSigning, submitContractSignature } from '../lib/api';
 import { renderMarkdown } from '../lib/contractMarkdown';
-import { LOGO_DARK } from '../lib/branding';
+import { LOGO_DARK, HAND_THANKYOU } from '../lib/branding';
 
 // ── Canvas signature pad ──────────────────────────────────────────────────────
 function SignaturePad({ onSigned, onCleared }) {
@@ -201,6 +201,16 @@ export default function Sign() {
             <span className="text-lg">✓</span>
           </div>
           <h2 className="font-serif text-3xl mb-4">You're all signed.</h2>
+          {/* Her real handwriting */}
+          <motion.img
+            src={HAND_THANKYOU}
+            alt="Thank you!"
+            className="mb-5 h-12 w-auto"
+            style={{ transform: 'rotate(-3deg)' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.85 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          />
           <p className="text-sm opacity-70 leading-relaxed max-w-sm mb-6">
             Thank you for signing. A copy has been sent to your email. I can't wait for your session!
           </p>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LOGO_DARK, LOGO_WHITE, SIGNATURE } from '../../lib/branding';
+import { LOGO_DARK, LOGO_WHITE, SIGNATURE, HAND_TAGLINE } from '../../lib/branding';
 import { InstagramDoodle, FacebookDoodle, NoteDoodle } from '../DoodleIcons';
 
 const navLinks = [
@@ -194,7 +194,13 @@ export default function PublicLayout() {
         <div className="grid gap-10 border-t border-ink/10 py-12 sm:grid-cols-2 md:grid-cols-4">
           <div>
             <img src={LOGO_DARK} alt="Alissa McDonald Photography" className="h-12 w-auto" />
-            <p className="meta mt-3">Moments that feel like you</p>
+            {/* Her handwriting, her words */}
+            <img
+              src={HAND_TAGLINE}
+              alt="Capturing moments, one click at a time"
+              className="mt-4 h-12 w-auto opacity-80"
+              style={{ transform: 'rotate(-1deg)' }}
+            />
             <img src={SIGNATURE} alt="" aria-hidden className="mt-5 h-9 w-auto opacity-70" />
           </div>
           <div>
