@@ -9,7 +9,7 @@ import Splash from './pages/Splash';
 // once unlocks the full demo on that browser. Admin, contract-signing, and
 // booking-status links always bypass the gate.
 // AT LAUNCH: set this to false and the whole gate disappears.
-const SPLASH_ENABLED = true;
+const SPLASH_ENABLED = false;
 
 const PREVIEW_KEY = 'amp_preview';
 
