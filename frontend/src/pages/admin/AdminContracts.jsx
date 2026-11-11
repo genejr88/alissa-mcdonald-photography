@@ -429,6 +429,109 @@ function TemplateEditor({ template, onSave, onCancel, isPending }) {
   );
 }
 
+// ── Sent contract row — expands to show what the client actually filled out ──
+function ContractRow({ c }) {
+  const [open, setOpen] = useState(false);
+  const signed = !!c.signedAt;
+  const expired = !signed && new Date() > new Date(c.expiresAt);
+  const link = `${SITE_URL}/sign/${c.token}`;
+  const intake = c.intakeData;
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden">
+      <div
+        className={`p-5 ${signed ? 'cursor-pointer hover:bg-gray-50' : ''} transition-colors`}
+        onClick={() => signed && setOpen((o) => !o)}
+      >
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 mb-1 flex-wrap">
+              <span className="font-medium text-sm">
+                {c.booking?.clientName || '—'}
+              </span>
+              <span className="text-xs opacity-40">{c.booking?.clientEmail || ''}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full ${signed ? 'bg-green-50 text-green-600 border border-green-200' : expired ? 'bg-red-50 text-red-400 border border-red-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}`}>
+                {signed ? '✓ Signed' : expired ? 'Expired' : 'Awaiting signature'}
+              </span>
+            </div>
+            <p className="text-xs opacity-30 font-mono">
+              {c.template?.name} · Sent {new Date(c.createdAt).toLocaleDateString()}
+              {signed && ` · Signed ${new Date(c.signedAt).toLocaleDateString()} by ${c.signerName}`}
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0 flex-wrap">
+            {!signed && !expired && <CopyBtn text={link} label="Copy link" />}
+            {c.pdfUrl && (
+              <a
+                href={c.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                PDF ↗
+              </a>
+            )}
+            {!signed && !expired && (
+              <a
+                href={link}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                Preview ↗
+              </a>
+            )}
+            {signed && <span className="text-gray-300 text-sm self-center">{open ? '▲' : '▼'}</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* What they filled out — only once signed */}
+      {signed && open && (
+        <div className="border-t border-gray-100 p-5 bg-gray-50 space-y-4">
+          {intake ? (
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Guardian / client name</span>{intake.guardianName || '—'}</div>
+              <div><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Phone</span>{intake.phone || '—'}</div>
+              <div><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Email</span>{intake.email || '—'}</div>
+              <div><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Address</span>{intake.address || '—'}</div>
+              <div className="col-span-2">
+                <span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Participants</span>
+                <span className="whitespace-pre-wrap">{intake.participants || '—'}</span>
+              </div>
+              <div>
+                <span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Model release</span>
+                <span className={intake.modelRelease ? 'text-green-600' : 'text-red-500'}>
+                  {intake.modelRelease ? '✓ Granted' : '✗ Declined'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm opacity-40">No intake details were captured for this contract.</p>
+          )}
+
+          {c.signatureData && (
+            <div>
+              <span className="opacity-40 text-xs uppercase tracking-wide block mb-2">Signature</span>
+              <img
+                src={c.signatureData}
+                alt={`${c.signerName || 'Client'}'s signature`}
+                className="h-16 bg-white border border-gray-200 rounded px-2"
+              />
+            </div>
+          )}
+
+          {c.signerIp && (
+            <p className="text-xs opacity-30 font-mono">Signed from IP {c.signerIp}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function AdminContracts() {
   const qc = useQueryClient();
@@ -485,55 +588,7 @@ export default function AdminContracts() {
             </div>
           )}
           <div className="space-y-3">
-            {contracts.map((c) => {
-              const signed = !!c.signedAt;
-              const expired = !signed && new Date() > new Date(c.expiresAt);
-              const link = `${SITE_URL}/sign/${c.token}`;
-              return (
-                <div key={c.id} className="bg-white border border-gray-100 rounded-lg p-5">
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-3 mb-1 flex-wrap">
-                        <span className="font-medium text-sm">
-                          {c.booking?.clientName || '—'}
-                        </span>
-                        <span className="text-xs opacity-40">{c.booking?.clientEmail || ''}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${signed ? 'bg-green-50 text-green-600 border border-green-200' : expired ? 'bg-red-50 text-red-400 border border-red-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}`}>
-                          {signed ? '✓ Signed' : expired ? 'Expired' : 'Awaiting signature'}
-                        </span>
-                      </div>
-                      <p className="text-xs opacity-30 font-mono">
-                        {c.template?.name} · Sent {new Date(c.createdAt).toLocaleDateString()}
-                        {signed && ` · Signed ${new Date(c.signedAt).toLocaleDateString()} by ${c.signerName}`}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 shrink-0 flex-wrap">
-                      {!signed && !expired && <CopyBtn text={link} label="Copy link" />}
-                      {c.pdfUrl && (
-                        <a
-                          href={c.pdfUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50 transition-colors"
-                        >
-                          PDF ↗
-                        </a>
-                      )}
-                      {!signed && !expired && (
-                        <a
-                          href={link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-xs px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50 transition-colors"
-                        >
-                          Preview ↗
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {contracts.map((c) => <ContractRow key={c.id} c={c} />)}
           </div>
         </div>
       )}

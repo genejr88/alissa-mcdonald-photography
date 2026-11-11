@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // ALL API calls live in this file — check here before adding new ones.
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE,
 });
 
 api.interceptors.request.use((config) => {
@@ -133,5 +134,13 @@ export const submitInquiry = (data) => api.post('/inquiries', data).then((r) => 
 // ---- Inquiries (admin) ----
 export const adminGetInquiries = () => api.get('/inquiries/admin').then((r) => r.data);
 export const adminUpdateInquiry = (id, data) => api.put(`/inquiries/admin/${id}`, data).then((r) => r.data);
+
+// ---- Calendar ----
+// Plain downloadable link — no fetch wrapper needed, just point an <a> at it.
+export const bookingCalendarUrl = (token) => `${API_BASE}/bookings/token/${token}/calendar.ics`;
+
+// ---- Calendar (admin) ----
+export const getCalendarFeedUrl = () => api.get('/calendar/feed-url').then((r) => r.data);
+export const regenerateCalendarFeedUrl = () => api.post('/calendar/feed-url/regenerate').then((r) => r.data);
 
 export default api;

@@ -3,6 +3,7 @@ const { requireAuth } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
 const { getAvailableSlots, studioTimeToUtc } = require('../lib/availability');
 const { sendMail } = require('../lib/mailer');
+const { buildEvent, buildCalendar } = require('../lib/ics');
 
 const BASE_URL = process.env.SITE_URL || 'https://alissamcdonaldphotography.com';
 
@@ -97,6 +98,31 @@ router.post('/', async (req, res, next) => {
     }
 
     res.status(201).json({ token: booking.token });
+  } catch (e) { next(e); }
+});
+
+// GET /api/bookings/token/:token/calendar.ics — "add to calendar" download
+router.get('/token/:token/calendar.ics', async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { token: req.params.token },
+      include: { service: true },
+    });
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+
+    const event = buildEvent({
+      uid: `booking-${booking.id}@alissamcdonaldphotography.com`,
+      summary: `${booking.service?.name || 'Photography Session'} — Alissa McDonald Photography`,
+      description: booking.notes || 'Photography session with Alissa McDonald Photography.',
+      start: booking.startsAt,
+      end: booking.endsAt,
+      createdAt: booking.createdAt,
+    });
+    const ics = buildCalendar([event], { name: 'Photography Session' });
+
+    res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="session-${booking.id}.ics"`);
+    res.send(ics);
   } catch (e) { next(e); }
 });
 

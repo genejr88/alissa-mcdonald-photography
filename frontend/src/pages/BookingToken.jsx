@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { getBookingByToken, cancelBookingByToken } from '../lib/api';
+import { getBookingByToken, cancelBookingByToken, bookingCalendarUrl } from '../lib/api';
 
 const STATUS_LABELS = {
   PENDING: 'Pending confirmation',
@@ -88,6 +88,16 @@ export default function BookingToken() {
             {booking.clientPhone && <Row label="Phone" value={booking.clientPhone} />}
             {booking.notes && <Row label="Notes" value={booking.notes} />}
           </div>
+
+          {/* Add to calendar */}
+          {(status === 'PENDING' || status === 'CONFIRMED') && (
+            <a
+              href={bookingCalendarUrl(token)}
+              className="inline-block mb-8 text-sm opacity-70 hover:opacity-100 underline transition-opacity"
+            >
+              Add to calendar →
+            </a>
+          )}
 
           {/* Actions */}
           {status === 'PENDING' && (
