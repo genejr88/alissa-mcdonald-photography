@@ -6,6 +6,8 @@ import {
   getAvailabilityExceptions,
   addAvailabilityException,
   deleteAvailabilityException,
+  getCalendarFeedUrl,
+  regenerateCalendarFeedUrl,
 } from '../../lib/api';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -173,6 +175,72 @@ function ExceptionForm({ onAdd, isPending }) {
   );
 }
 
+function CopyBtn({ text }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      }}
+      className="text-xs px-3 py-1.5 rounded border border-gray-200 hover:bg-gray-50 transition-colors shrink-0"
+    >
+      {copied ? '✓ Copied' : 'Copy link'}
+    </button>
+  );
+}
+
+function CalendarSyncSection() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ['calendar-feed-url'], queryFn: getCalendarFeedUrl });
+
+  const regenerate = useMutation({
+    mutationFn: regenerateCalendarFeedUrl,
+    onSuccess: (res) => qc.setQueryData(['calendar-feed-url'], res),
+  });
+
+  return (
+    <section className="mt-12">
+      <h2 className="text-xs uppercase tracking-widest opacity-40 mb-4">Sync to Your Calendar App</h2>
+      <div className="bg-white border border-gray-100 rounded-lg p-6">
+        <p className="text-sm opacity-70 mb-4">
+          Subscribe to this link once in Google Calendar, Apple Calendar, or Outlook and your
+          confirmed sessions will show up automatically and stay in sync — no manual adding.
+        </p>
+
+        {isLoading ? (
+          <p className="opacity-40 text-sm">Loading…</p>
+        ) : (
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="bg-gray-50 rounded px-3 py-2 text-xs font-mono text-gray-600 break-all flex-1 min-w-0">
+              {data?.url}
+            </div>
+            <CopyBtn text={data?.url || ''} />
+          </div>
+        )}
+
+        <details className="mt-4 text-xs opacity-60">
+          <summary className="cursor-pointer">How do I subscribe?</summary>
+          <ul className="mt-2 space-y-1 list-disc pl-4">
+            <li><strong>Google Calendar</strong> → Other calendars (+) → From URL → paste the link.</li>
+            <li><strong>Apple Calendar</strong> → File → New Calendar Subscription → paste the link.</li>
+            <li><strong>Outlook</strong> → Add calendar → Subscribe from web → paste the link.</li>
+          </ul>
+        </details>
+
+        <button
+          onClick={() => { if (confirm('This invalidates the old link — anywhere it was already added will stop syncing. Continue?')) regenerate.mutate(); }}
+          disabled={regenerate.isPending}
+          className="mt-4 text-xs text-red-400 hover:text-red-600 transition-colors disabled:opacity-40"
+        >
+          {regenerate.isPending ? 'Regenerating…' : 'Regenerate link (if it ever leaks)'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export default function AdminAvailability() {
   const qc = useQueryClient();
   const [saved, setSaved] = useState(false);
@@ -269,6 +337,8 @@ export default function AdminAvailability() {
           })}
         </div>
       </section>
+
+      <CalendarSyncSection />
     </div>
   );
 }

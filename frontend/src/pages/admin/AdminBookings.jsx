@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminGetBookings, adminUpdateBooking } from '../../lib/api';
+import { adminGetBookings, adminUpdateBooking, bookingCalendarUrl } from '../../lib/api';
 
 const STATUSES = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 
@@ -125,6 +125,14 @@ function BookingRow({ booking, onUpdate }) {
               className="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors"
             >
               Share contract ↗
+            </a>
+
+            {/* Add to calendar */}
+            <a
+              href={bookingCalendarUrl(booking.token)}
+              className="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors"
+            >
+              Add to calendar ↓
             </a>
           </div>
         </div>
