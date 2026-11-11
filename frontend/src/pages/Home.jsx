@@ -158,13 +158,13 @@ export default function Home() {
               View all galleries →
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-3">
+          <div className="columns-2 gap-2 md:columns-3 md:gap-3">
             {featurePhotos.map((photo, i) => (
               <RevealImage
                 key={photo.id}
                 src={photo.url}
                 alt={photo.alt || ''}
-                className="w-full object-cover"
+                className="mb-2 w-full break-inside-avoid md:mb-3"
                 style={{
                   aspectRatio: photo.height > photo.width ? '2/3' : '3/2',
                 }}

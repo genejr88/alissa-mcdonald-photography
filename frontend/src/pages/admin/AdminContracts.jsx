@@ -293,6 +293,38 @@ function TemplateEditor({ template, onSave, onCancel, isPending }) {
     insertAtCursor(`${atLineStart ? '' : '\n\n'}## New Section\n`);
   }
 
+  // Turn the selected line(s) into a bullet or numbered list; with no
+  // selection, insert one placeholder item on its own line.
+  function insertList(kind) {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const selected = body.slice(start, end);
+    const atLineStart = start === 0 || body[start - 1] === '\n';
+
+    const marker = (i) => (kind === 'numbered' ? `${i + 1}. ` : '- ');
+    const sourceLines = selected ? selected.split('\n') : ['List item'];
+    const listText = sourceLines.map((l, i) => `${marker(i)}${l}`).join('\n');
+    const prefix = atLineStart ? '' : '\n';
+
+    const next = body.slice(0, start) + prefix + listText + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      ta.focus();
+      const from = start + prefix.length;
+      ta.selectionStart = from;
+      ta.selectionEnd = from + listText.length;
+    });
+  }
+
+  // Insert a horizontal divider on its own line
+  function insertDivider() {
+    const ta = textareaRef.current;
+    const atLineStart = !ta || ta.selectionStart === 0 || body[ta.selectionStart - 1] === '\n';
+    insertAtCursor(`${atLineStart ? '' : '\n\n'}---\n`);
+  }
+
   const toolbarBtn =
     'rounded border border-gray-200 px-2.5 py-1.5 text-xs hover:bg-gray-50 transition-colors';
 
@@ -336,6 +368,22 @@ function TemplateEditor({ template, onSave, onCancel, isPending }) {
             className={`${toolbarBtn} font-bold`}
           >
             B Bold
+          </button>
+          <button
+            type="button"
+            onClick={() => wrapSelection('*', '*', 'italic text')}
+            className={`${toolbarBtn} italic`}
+          >
+            i Italic
+          </button>
+          <button type="button" onClick={() => insertList('bullet')} className={toolbarBtn}>
+            • Bullet list
+          </button>
+          <button type="button" onClick={() => insertList('numbered')} className={toolbarBtn}>
+            1. Numbered list
+          </button>
+          <button type="button" onClick={insertDivider} className={toolbarBtn}>
+            ― Divider
           </button>
           {/* Mobile-only write/preview toggle */}
           <div className="ml-auto flex gap-1 lg:hidden">
