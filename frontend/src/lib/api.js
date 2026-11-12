@@ -134,4 +134,14 @@ export const submitInquiry = (data) => api.post('/inquiries', data).then((r) => 
 export const adminGetInquiries = () => api.get('/inquiries/admin').then((r) => r.data);
 export const adminUpdateInquiry = (id, data) => api.put(`/inquiries/admin/${id}`, data).then((r) => r.data);
 
+// ---- Mail (admin inbox) ----
+export const getMailConfig = () => api.get('/mail/config').then((r) => r.data);
+export const getMailMessages = (folder, page) =>
+  api.get('/mail/messages', { params: { folder, page } }).then((r) => r.data);
+export const getMailMessage = (folder, uid) =>
+  api.get(`/mail/messages/${uid}`, { params: { folder } }).then((r) => r.data);
+export const setMailSeen = (folder, uid, seen) =>
+  api.put(`/mail/messages/${uid}/seen`, { seen }, { params: { folder } }).then((r) => r.data);
+export const sendMailMessage = (data) => api.post('/mail/send', data).then((r) => r.data);
+
 export default api;
