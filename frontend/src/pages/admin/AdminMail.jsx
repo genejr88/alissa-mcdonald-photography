@@ -405,7 +405,7 @@ function MessageRow({ folder, msg, open, onToggle, onRead, onDeleted }) {
             if (confirm(folder === 'Trash' ? 'Permanently delete this message? This cannot be undone.' : 'Move this message to Trash?')) del.mutate();
           }}
           title={folder === 'Trash' ? 'Delete permanently' : 'Move to Trash'}
-          className="shrink-0 rounded-lg p-1.5 text-gray-300 opacity-0 transition-colors hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+          className="shrink-0 rounded-lg p-1.5 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500 active:bg-red-50 active:text-red-500"
         >
           <TrashIcon className="h-3.5 w-3.5" />
         </button>
@@ -477,21 +477,21 @@ export default function AdminMail() {
         />
       )}
 
-      <div className="my-6 flex flex-wrap items-center gap-2">
-        <div className="flex gap-1.5 rounded-xl bg-gray-100 p-1">
+      <div className="my-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex gap-1.5 self-start overflow-x-auto rounded-xl bg-gray-100 p-1">
           {FOLDERS.map(([v, l]) => (
             <button
               key={v}
               onClick={() => changeFolder(v)}
-              className={`rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${folder === v ? 'bg-white text-ink shadow-sm' : 'text-gray-500 hover:text-ink'}`}
+              className={`shrink-0 rounded-lg px-4 py-1.5 text-xs font-medium transition-colors ${folder === v ? 'bg-white text-ink shadow-sm' : 'text-gray-500 hover:text-ink'}`}
             >
               {l}
             </button>
           ))}
         </div>
 
-        <div className="ml-auto flex min-w-0 flex-1 items-center gap-2 sm:flex-none sm:w-80">
-          <div className="relative flex-1">
+        <div className="flex items-center gap-2 sm:ml-auto sm:w-80">
+          <div className="relative min-w-0 flex-1">
             <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-300" />
             <input
               value={searchInput}
