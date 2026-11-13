@@ -14,7 +14,7 @@ function getTransporter() {
   return transporter;
 }
 
-async function sendMail({ to, subject, text, html, replyTo }) {
+async function sendMail({ to, cc, subject, text, html, replyTo, attachments }) {
   const t = getTransporter();
   if (!t) {
     console.log(`[MAIL skipped — no SMTP] To: ${to}\nSubject: ${subject}\n${text}`);
@@ -26,7 +26,9 @@ async function sendMail({ to, subject, text, html, replyTo }) {
     subject,
     text,
     html: html || text,
+    ...(cc ? { cc } : {}),
     ...(replyTo ? { replyTo } : {}),
+    ...(attachments?.length ? { attachments } : {}),
   });
 }
 

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getMailConfig, getMailMessages, getMailMessage, setMailSeen, sendMailMessage,
+  getMailConfig, getMailMessages, searchMailMessages, getMailMessage, setMailSeen,
+  sendMailMessage, downloadMailAttachment, adminGetContractTemplates, adminSendContract,
 } from '../../lib/api';
 
 const FOLDERS = [['INBOX', 'Inbox'], ['Sent', 'Sent']];
@@ -13,15 +14,28 @@ function formatDate(d) {
   });
 }
 
+function fmtSize(bytes) {
+  if (!bytes) return '';
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+
+function extractEmail(fromHeader) {
+  return fromHeader?.match(/<(.+)>/)?.[1] || fromHeader || '';
+}
+
 function ComposeForm({ defaultTo = '', defaultSubject = '', quoteText = '', onSent, onCancel }) {
   const [to, setTo] = useState(defaultTo);
+  const [cc, setCc] = useState('');
   const [subject, setSubject] = useState(defaultSubject);
   const [text, setText] = useState('');
+  const [files, setFiles] = useState([]);
 
   const send = useMutation({
-    mutationFn: () => sendMailMessage({ to, subject, text, inReplyToText: quoteText || undefined }),
+    mutationFn: () => sendMailMessage({ to, cc: cc || undefined, subject, text, inReplyToText: quoteText || undefined, files }),
     onSuccess: () => onSent?.(),
   });
+
+  const removeFile = (idx) => setFiles((fs) => fs.filter((_, i) => i !== idx));
 
   return (
     <div className="mt-3 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -35,6 +49,15 @@ function ComposeForm({ defaultTo = '', defaultSubject = '', quoteText = '', onSe
           />
         </div>
         <div>
+          <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">CC (optional)</label>
+          <input
+            className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none"
+            value={cc}
+            onChange={(e) => setCc(e.target.value)}
+            placeholder="another@email.com"
+          />
+        </div>
+        <div className="sm:col-span-2">
           <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">Subject</label>
           <input
             className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none"
@@ -51,6 +74,25 @@ function ComposeForm({ defaultTo = '', defaultSubject = '', quoteText = '', onSe
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">Attachments (optional)</label>
+        <input
+          type="file"
+          multiple
+          onChange={(e) => setFiles((fs) => [...fs, ...Array.from(e.target.files || [])])}
+          className="block text-xs"
+        />
+        {files.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {files.map((f, i) => (
+              <li key={i} className="flex items-center justify-between rounded border border-gray-200 bg-white px-2.5 py-1.5 text-xs">
+                <span className="truncate">{f.name} ({fmtSize(f.size)})</span>
+                <button onClick={() => removeFile(i)} className="ml-2 shrink-0 text-red-400 transition-colors hover:text-red-600">Remove</button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       {send.isError && (
         <p className="text-sm text-red-500">{send.error?.response?.data?.error || 'Failed to send.'}</p>
@@ -74,8 +116,91 @@ function ComposeForm({ defaultTo = '', defaultSubject = '', quoteText = '', onSe
   );
 }
 
+function SendContractPicker({ toEmail, defaultName, onDone, onCancel }) {
+  const { data: templates = [] } = useQuery({ queryKey: ['contract-templates'], queryFn: adminGetContractTemplates });
+  const [templateId, setTemplateId] = useState('');
+  const [clientName, setClientName] = useState(defaultName || '');
+  const [sessionType, setSessionType] = useState('');
+  const [sessionDate, setSessionDate] = useState('');
+  const [price, setPrice] = useState('');
+  const [deposit, setDeposit] = useState('');
+  const [sent, setSent] = useState(false);
+
+  useEffect(() => {
+    if (!templateId && templates.length) setTemplateId(templates[0].id);
+  }, [templates, templateId]);
+
+  const send = useMutation({
+    mutationFn: () => adminSendContract({
+      templateId, clientName, clientEmail: toEmail, sessionType, sessionDate, price, deposit,
+    }),
+    onSuccess: () => setSent(true),
+  });
+
+  if (sent) {
+    return (
+      <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-4 text-sm">
+        <p className="mb-2 font-medium text-green-700">Contract sent to {toEmail}.</p>
+        <button onClick={onDone} className="text-xs underline">Done</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">Template</label>
+          <select
+            className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none"
+            value={templateId}
+            onChange={(e) => setTemplateId(e.target.value)}
+          >
+            {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">Client Name</label>
+          <input className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">Session Type</label>
+          <input className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none" value={sessionType} onChange={(e) => setSessionType(e.target.value)} placeholder="The Mini Session" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">Session Date</label>
+          <input className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)} placeholder="July 15, 2026" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">Price</label>
+          <input className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="$175" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs uppercase tracking-wide opacity-40">Deposit</label>
+          <input className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none" value={deposit} onChange={(e) => setDeposit(e.target.value)} placeholder="Optional" />
+        </div>
+      </div>
+      {send.isError && (
+        <p className="text-sm text-red-500">{send.error?.response?.data?.error || 'Failed to send.'}</p>
+      )}
+      <div className="flex gap-3">
+        <button
+          disabled={!templateId || !clientName || send.isPending}
+          onClick={() => send.mutate()}
+          className="rounded bg-black px-4 py-2 text-xs uppercase tracking-widest text-white transition-colors hover:bg-gray-800 disabled:opacity-40"
+        >
+          {send.isPending ? 'Sending…' : 'Send Contract'}
+        </button>
+        <button onClick={onCancel} className="rounded border border-gray-200 px-4 py-2 text-xs uppercase tracking-widest transition-colors hover:bg-gray-50">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function MessageDetail({ folder, uid, onRead }) {
-  const [replying, setReplying] = useState(false);
+  const [mode, setMode] = useState(null); // null | 'reply' | 'contract'
   const { data, isLoading } = useQuery({
     queryKey: ['mail-message', folder, uid],
     queryFn: () => getMailMessage(folder, uid),
@@ -94,6 +219,9 @@ function MessageDetail({ folder, uid, onRead }) {
 
   if (isLoading) return <p className="p-4 text-sm opacity-40">Loading…</p>;
   if (!data) return null;
+
+  const senderEmail = extractEmail(data.from);
+  const senderName = data.from?.match(/^"?([^"<]+)"?\s*</)?.[1]?.trim() || senderEmail;
 
   return (
     <div className="space-y-4 border-t border-gray-100 bg-gray-50 p-5">
@@ -118,25 +246,50 @@ function MessageDetail({ folder, uid, onRead }) {
       )}
 
       {data.attachments?.length > 0 && (
-        <div className="text-xs opacity-50">
-          Attachments: {data.attachments.map((a) => a.filename).join(', ')}
+        <div className="flex flex-wrap gap-2">
+          {data.attachments.map((a, i) => (
+            <button
+              key={i}
+              onClick={() => downloadMailAttachment(folder, uid, i, a.filename)}
+              className="rounded border border-gray-200 bg-white px-3 py-1.5 text-xs transition-colors hover:bg-gray-100"
+            >
+              📎 {a.filename} {a.size ? `(${fmtSize(a.size)})` : ''}
+            </button>
+          ))}
         </div>
       )}
 
-      {!replying ? (
+      <div className="flex gap-2">
         <button
-          onClick={() => setReplying(true)}
-          className="rounded border border-gray-200 px-3 py-1.5 text-xs transition-colors hover:bg-white"
+          onClick={() => setMode(mode === 'reply' ? null : 'reply')}
+          className={`rounded border px-3 py-1.5 text-xs transition-colors ${mode === 'reply' ? 'border-black bg-black text-white' : 'border-gray-200 hover:bg-white'}`}
         >
           Reply
         </button>
-      ) : (
+        <button
+          onClick={() => setMode(mode === 'contract' ? null : 'contract')}
+          className={`rounded border px-3 py-1.5 text-xs transition-colors ${mode === 'contract' ? 'border-black bg-black text-white' : 'border-gray-200 hover:bg-white'}`}
+        >
+          Send Contract →
+        </button>
+      </div>
+
+      {mode === 'reply' && (
         <ComposeForm
-          defaultTo={data.from?.match(/<(.+)>/)?.[1] || data.from || ''}
+          defaultTo={senderEmail}
           defaultSubject={data.subject?.startsWith('Re:') ? data.subject : `Re: ${data.subject}`}
           quoteText={`On ${formatDate(data.date)}, ${data.from} wrote:\n${data.text || ''}`}
-          onSent={() => setReplying(false)}
-          onCancel={() => setReplying(false)}
+          onSent={() => setMode(null)}
+          onCancel={() => setMode(null)}
+        />
+      )}
+
+      {mode === 'contract' && (
+        <SendContractPicker
+          toEmail={senderEmail}
+          defaultName={senderName}
+          onDone={() => setMode(null)}
+          onCancel={() => setMode(null)}
         />
       )}
     </div>
@@ -172,15 +325,24 @@ export default function AdminMail() {
   const [page, setPage] = useState(1);
   const [openUid, setOpenUid] = useState(null);
   const [composing, setComposing] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [activeSearch, setActiveSearch] = useState('');
 
   const { data: config } = useQuery({ queryKey: ['mail-config'], queryFn: getMailConfig });
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['mail-messages', folder, page],
-    queryFn: () => getMailMessages(folder, page),
+    queryKey: activeSearch ? ['mail-search', folder, activeSearch, page] : ['mail-messages', folder, page],
+    queryFn: () => (activeSearch ? searchMailMessages(folder, activeSearch, page) : getMailMessages(folder, page)),
     enabled: !!config?.configured,
   });
 
-  const refreshList = () => qc.invalidateQueries({ queryKey: ['mail-messages', folder] });
+  const refreshList = () => {
+    qc.invalidateQueries({ queryKey: ['mail-messages', folder] });
+    qc.invalidateQueries({ queryKey: ['mail-search', folder] });
+  };
+
+  const changeFolder = (f) => { setFolder(f); setPage(1); setOpenUid(null); setActiveSearch(''); setSearchInput(''); };
+  const runSearch = () => { setActiveSearch(searchInput.trim()); setPage(1); setOpenUid(null); };
+  const clearSearch = () => { setActiveSearch(''); setSearchInput(''); setPage(1); };
 
   if (config && !config.configured) {
     return (
@@ -217,17 +379,42 @@ export default function AdminMail() {
         />
       )}
 
-      <div className="my-6 flex gap-2">
+      <div className="my-6 flex flex-wrap items-center gap-2">
         {FOLDERS.map(([v, l]) => (
           <button
             key={v}
-            onClick={() => { setFolder(v); setPage(1); setOpenUid(null); }}
+            onClick={() => changeFolder(v)}
             className={`rounded px-4 py-2 text-xs transition-colors ${folder === v ? 'bg-black text-white' : 'border border-gray-200 hover:bg-gray-50'}`}
           >
             {l}
           </button>
         ))}
+
+        <div className="ml-auto flex min-w-0 flex-1 items-center gap-2 sm:flex-none sm:w-80">
+          <input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') runSearch(); }}
+            placeholder="Search subject, sender, body…"
+            className="w-full rounded border border-gray-200 px-3 py-2 text-sm focus:outline-none"
+          />
+          {activeSearch ? (
+            <button onClick={clearSearch} className="shrink-0 rounded border border-gray-200 px-3 py-2 text-xs transition-colors hover:bg-gray-50">
+              Clear
+            </button>
+          ) : (
+            <button onClick={runSearch} className="shrink-0 rounded border border-gray-200 px-3 py-2 text-xs transition-colors hover:bg-gray-50">
+              Search
+            </button>
+          )}
+        </div>
       </div>
+
+      {activeSearch && (
+        <p className="mb-4 text-xs opacity-50">
+          Results for &ldquo;{activeSearch}&rdquo; in {folder === 'INBOX' ? 'Inbox' : 'Sent'}
+        </p>
+      )}
 
       {isLoading && <p className="text-sm opacity-40">Loading…</p>}
       {isError && (

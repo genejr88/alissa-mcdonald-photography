@@ -1,7 +1,23 @@
 const router = require('express').Router();
+const multer = require('multer');
 const { requireAuth } = require('../middleware/auth');
 const { sendMail } = require('../lib/mailer');
 const mailbox = require('../lib/mailbox');
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 15 * 1024 * 1024, files: 5 }, // 15MB/file, 5 files — most SMTP relays cap total message size well under this
+});
+
+// multer rejects an over-limit upload from inside its own middleware, before
+// the route handler runs — its error never reaches our try/catch there, so
+// it needs handling right here or it falls through to the generic 500.
+function uploadAttachments(req, res, next) {
+  upload.array('attachments', 5)(req, res, (err) => {
+    if (err) return res.status(400).json({ error: `Attachment upload failed: ${err.message}` });
+    next();
+  });
+}
 
 // All of this is the photographer's own inbox — admin-only, same login as
 // the rest of /admin. No public routes here.
@@ -30,6 +46,19 @@ router.get('/messages', requireAuth, async (req, res) => {
   } catch (e) { respondMailError(res, e); }
 });
 
+// GET /api/mail/messages/search?folder=INBOX&q=...&page=1
+// Registered before /messages/:uid — "search" would otherwise be parsed as a uid.
+router.get('/messages/search', requireAuth, async (req, res) => {
+  try {
+    const folder = req.query.folder || 'INBOX';
+    const page = parseInt(req.query.page || '1', 10);
+    const query = (req.query.q || '').trim();
+    if (!query) return res.status(400).json({ error: 'q is required.' });
+    const data = await mailbox.searchMessages({ folder, query, page });
+    res.json(data);
+  } catch (e) { respondMailError(res, e); }
+});
+
 // GET /api/mail/messages/:uid?folder=INBOX
 router.get('/messages/:uid', requireAuth, async (req, res) => {
   try {
@@ -37,6 +66,19 @@ router.get('/messages/:uid', requireAuth, async (req, res) => {
     const uid = parseInt(req.params.uid, 10);
     const message = await mailbox.getMessage({ folder, uid });
     res.json(message);
+  } catch (e) { respondMailError(res, e); }
+});
+
+// GET /api/mail/messages/:uid/attachments/:index?folder=INBOX — download one attachment
+router.get('/messages/:uid/attachments/:index', requireAuth, async (req, res) => {
+  try {
+    const folder = req.query.folder || 'INBOX';
+    const uid = parseInt(req.params.uid, 10);
+    const index = parseInt(req.params.index, 10);
+    const attachment = await mailbox.getAttachment({ folder, uid, index });
+    res.setHeader('Content-Type', attachment.contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${attachment.filename.replace(/[^\x20-\x7e]/g, '_')}"`);
+    res.send(attachment.content);
   } catch (e) { respondMailError(res, e); }
 });
 
@@ -51,11 +93,11 @@ router.put('/messages/:uid/seen', requireAuth, async (req, res) => {
   } catch (e) { respondMailError(res, e); }
 });
 
-// POST /api/mail/send — compose or reply
-// Body: { to, subject, text, inReplyToText? }
-router.post('/send', requireAuth, async (req, res) => {
+// POST /api/mail/send — compose or reply, multipart/form-data so attachments can ride along
+// Fields: to, cc?, subject, text, inReplyToText? — Files: attachments[] (up to 5)
+router.post('/send', requireAuth, uploadAttachments, async (req, res) => {
   try {
-    const { to, subject, text, inReplyToText } = req.body;
+    const { to, cc, subject, text, inReplyToText } = req.body;
     if (!to || !subject || !text) {
       return res.status(400).json({ error: 'to, subject, and text are required.' });
     }
@@ -64,11 +106,19 @@ router.post('/send', requireAuth, async (req, res) => {
       ? `${text}\n\n--- Original message ---\n${inReplyToText}`
       : text;
 
+    const attachments = (req.files || []).map((f) => ({
+      filename: f.originalname,
+      content: f.buffer,
+      contentType: f.mimetype,
+    }));
+
     await sendMail({
       to,
+      cc: cc || undefined,
       subject,
       text: body,
       html: body.replace(/\n/g, '<br>'),
+      attachments,
     });
 
     res.json({ ok: true });
