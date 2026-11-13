@@ -30,6 +30,7 @@ import About from './pages/About';
 import Experience from './pages/Experience';
 import KindWords from './pages/KindWords';
 import Contact from './pages/Contact';
+import Privacy from './pages/Privacy';
 import Guestbook from './pages/Guestbook';
 import Book from './pages/Book';
 import Sign from './pages/Sign';
@@ -64,6 +65,7 @@ export default function App() {
     path.startsWith('/admin') ||
     path.startsWith('/sign/') ||
     path.startsWith('/booking/') ||
+    path.startsWith('/privacy') ||
     path === '/loop';
   const previewUnlocked =
     typeof localStorage !== 'undefined' && localStorage.getItem(PREVIEW_KEY) === '1';
@@ -83,6 +85,7 @@ export default function App() {
           <Route path="/experience" element={<Experience />} />
           <Route path="/kind-words" element={<KindWords />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="/guest-book" element={<Guestbook />} />
           <Route path="/book" element={<Book />} />
           <Route path="/booking/:token" element={<BookingToken />} />
