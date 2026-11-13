@@ -10,6 +10,11 @@ function getTransporter() {
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: process.env.SMTP_SECURE === 'true',
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    // Explicit timeouts so a stalled connection fails with a clear error
+    // instead of hanging the request indefinitely.
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 30000,
   });
   return transporter;
 }

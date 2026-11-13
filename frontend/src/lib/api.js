@@ -1,8 +1,12 @@
 import axios from 'axios';
 
 // ALL API calls live in this file — check here before adding new ones.
+// A timeout matters here: without one, a hung backend call (e.g. a stalled
+// SMTP/IMAP connection) leaves the UI stuck on "Sending…"/"Loading…" forever
+// with no error at all, instead of failing visibly after a minute.
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
+  timeout: 60000,
 });
 
 api.interceptors.request.use((config) => {
@@ -164,7 +168,12 @@ export const downloadMailAttachment = async (folder, uid, index, filename) => {
   URL.revokeObjectURL(url);
 };
 
-// multipart/form-data so files can ride alongside the message fields
+// multipart/form-data so files can ride alongside the message fields.
+// Do NOT set Content-Type manually here — a FormData body needs the browser
+// to compute it, since the required boundary marker lives in that header.
+// Setting a bare 'multipart/form-data' string overrides that and strips the
+// boundary, which left the server waiting for a delimiter that never
+// arrives: the request just hangs forever with no error either side.
 export const sendMailMessage = ({ to, cc, subject, text, inReplyToText, files }) => {
   const form = new FormData();
   form.append('to', to);
@@ -173,9 +182,7 @@ export const sendMailMessage = ({ to, cc, subject, text, inReplyToText, files })
   form.append('text', text);
   if (inReplyToText) form.append('inReplyToText', inReplyToText);
   (files || []).forEach((f) => form.append('attachments', f));
-  return api
-    .post('/mail/send', form, { headers: { 'Content-Type': 'multipart/form-data' } })
-    .then((r) => r.data);
+  return api.post('/mail/send', form).then((r) => r.data);
 };
 
 export default api;
