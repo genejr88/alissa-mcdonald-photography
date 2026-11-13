@@ -98,6 +98,56 @@ async function getMessage({ folder = 'INBOX', uid }) {
   });
 }
 
+// Search subject+from+body in one pass (IMAP TEXT searches header and body),
+// paginated the same shape as listMessages so the frontend can reuse it.
+async function searchMessages({ folder = 'INBOX', query, page = 1 } = {}) {
+  return withClient(async (client) => {
+    await client.mailboxOpen(folder);
+    const uids = await client.search({ text: query }, { uid: true });
+    if (!uids || uids.length === 0) return { messages: [], total: 0, page, pageSize: PAGE_SIZE };
+
+    const sorted = [...uids].sort((a, b) => b - a); // newest (highest UID) first
+    const total = sorted.length;
+    const start = (page - 1) * PAGE_SIZE;
+    const pageUids = sorted.slice(start, start + PAGE_SIZE);
+    if (pageUids.length === 0) return { messages: [], total, page, pageSize: PAGE_SIZE };
+
+    const byUid = new Map();
+    for await (const msg of client.fetch(pageUids, { envelope: true, flags: true, uid: true }, { uid: true })) {
+      byUid.set(msg.uid, msg);
+    }
+    const messages = pageUids
+      .map((uid) => byUid.get(uid))
+      .filter(Boolean)
+      .map((msg) => ({
+        uid: msg.uid,
+        from: formatEnvelopeAddress(msg.envelope?.from),
+        subject: msg.envelope?.subject || '(no subject)',
+        date: msg.envelope?.date || null,
+        seen: msg.flags?.has('\\Seen') || false,
+      }));
+    return { messages, total, page, pageSize: PAGE_SIZE };
+  });
+}
+
+// One specific attachment's raw content, for download — re-fetches and
+// re-parses the message rather than caching, same stateless-per-call shape
+// as everything else here.
+async function getAttachment({ folder = 'INBOX', uid, index }) {
+  return withClient(async (client) => {
+    await client.mailboxOpen(folder);
+    const { content } = await client.download(uid, undefined, { uid: true });
+    const parsed = await simpleParser(content);
+    const attachment = (parsed.attachments || [])[index];
+    if (!attachment) throw new Error('Attachment not found.');
+    return {
+      filename: attachment.filename || `attachment-${index}`,
+      contentType: attachment.contentType || 'application/octet-stream',
+      content: attachment.content,
+    };
+  });
+}
+
 async function setSeen({ folder = 'INBOX', uid, seen }) {
   return withClient(async (client) => {
     await client.mailboxOpen(folder);
@@ -110,4 +160,4 @@ async function setSeen({ folder = 'INBOX', uid, seen }) {
   });
 }
 
-module.exports = { isConfigured, listMessages, getMessage, setSeen };
+module.exports = { isConfigured, listMessages, searchMessages, getMessage, getAttachment, setSeen };

@@ -138,10 +138,42 @@ export const adminUpdateInquiry = (id, data) => api.put(`/inquiries/admin/${id}`
 export const getMailConfig = () => api.get('/mail/config').then((r) => r.data);
 export const getMailMessages = (folder, page) =>
   api.get('/mail/messages', { params: { folder, page } }).then((r) => r.data);
+export const searchMailMessages = (folder, q, page) =>
+  api.get('/mail/messages/search', { params: { folder, q, page } }).then((r) => r.data);
 export const getMailMessage = (folder, uid) =>
   api.get(`/mail/messages/${uid}`, { params: { folder } }).then((r) => r.data);
 export const setMailSeen = (folder, uid, seen) =>
   api.put(`/mail/messages/${uid}/seen`, { seen }, { params: { folder } }).then((r) => r.data);
-export const sendMailMessage = (data) => api.post('/mail/send', data).then((r) => r.data);
+
+// Attachment download needs the auth header, so a plain <a href> won't work
+// (browser nav doesn't carry it) — fetch as a blob and trigger the save manually.
+export const downloadMailAttachment = async (folder, uid, index, filename) => {
+  const res = await api.get(`/mail/messages/${uid}/attachments/${index}`, {
+    params: { folder },
+    responseType: 'blob',
+  });
+  const url = URL.createObjectURL(res.data);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'attachment';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
+// multipart/form-data so files can ride alongside the message fields
+export const sendMailMessage = ({ to, cc, subject, text, inReplyToText, files }) => {
+  const form = new FormData();
+  form.append('to', to);
+  if (cc) form.append('cc', cc);
+  form.append('subject', subject);
+  form.append('text', text);
+  if (inReplyToText) form.append('inReplyToText', inReplyToText);
+  (files || []).forEach((f) => form.append('attachments', f));
+  return api
+    .post('/mail/send', form, { headers: { 'Content-Type': 'multipart/form-data' } })
+    .then((r) => r.data);
+};
 
 export default api;
