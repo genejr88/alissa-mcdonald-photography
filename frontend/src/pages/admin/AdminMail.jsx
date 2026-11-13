@@ -41,6 +41,15 @@ function ReplyIcon({ className = 'h-4 w-4' }) {
   );
 }
 
+// A timed-out/network-level failure has no .response at all (no HTTP
+// response was ever received), so the server's own error text isn't there
+// to fall back on — name that case specifically instead of a vague default.
+function mailErrorMessage(error, fallback) {
+  if (error?.response?.data?.error) return error.response.data.error;
+  if (error?.code === 'ECONNABORTED') return 'Timed out waiting on the mailbox — it may still have gone through.';
+  return fallback;
+}
+
 function formatDate(d) {
   if (!d) return '';
   const date = new Date(d);
@@ -150,7 +159,7 @@ function ComposeForm({ defaultTo = '', defaultSubject = '', quoteText = '', onSe
         )}
       </div>
       {send.isError && (
-        <p className="text-sm text-red-500">{send.error?.response?.data?.error || 'Failed to send.'}</p>
+        <p className="text-sm text-red-500">{mailErrorMessage(send.error, 'Failed to send.')}</p>
       )}
       <div className="flex gap-3 pt-1">
         <button
@@ -236,7 +245,7 @@ function SendContractPicker({ toEmail, defaultName, onDone, onCancel }) {
         </div>
       </div>
       {send.isError && (
-        <p className="text-sm text-red-500">{send.error?.response?.data?.error || 'Failed to send.'}</p>
+        <p className="text-sm text-red-500">{mailErrorMessage(send.error, 'Failed to send.')}</p>
       )}
       <div className="flex gap-3 pt-1">
         <button
@@ -509,7 +518,7 @@ export default function AdminMail() {
       {isLoading && <p className="text-sm text-gray-400">Loading…</p>}
       {isError && (
         <p className="text-sm text-red-500">
-          {error?.response?.data?.error || 'Could not reach the mailbox.'}
+          {mailErrorMessage(error, 'Could not reach the mailbox.')}
         </p>
       )}
 
