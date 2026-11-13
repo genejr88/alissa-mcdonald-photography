@@ -144,6 +144,8 @@ export const getMailMessage = (folder, uid) =>
   api.get(`/mail/messages/${uid}`, { params: { folder } }).then((r) => r.data);
 export const setMailSeen = (folder, uid, seen) =>
   api.put(`/mail/messages/${uid}/seen`, { seen }, { params: { folder } }).then((r) => r.data);
+export const deleteMailMessage = (folder, uid) =>
+  api.delete(`/mail/messages/${uid}`, { params: { folder } }).then((r) => r.data);
 
 // Attachment download needs the auth header, so a plain <a href> won't work
 // (browser nav doesn't carry it) — fetch as a blob and trigger the save manually.

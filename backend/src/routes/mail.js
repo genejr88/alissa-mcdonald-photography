@@ -93,6 +93,17 @@ router.put('/messages/:uid/seen', requireAuth, async (req, res) => {
   } catch (e) { respondMailError(res, e); }
 });
 
+// DELETE /api/mail/messages/:uid?folder=INBOX — moves to Trash, or permanently
+// deletes if already in Trash
+router.delete('/messages/:uid', requireAuth, async (req, res) => {
+  try {
+    const folder = req.query.folder || 'INBOX';
+    const uid = parseInt(req.params.uid, 10);
+    const result = await mailbox.deleteMessage({ folder, uid });
+    res.json(result);
+  } catch (e) { respondMailError(res, e); }
+});
+
 // POST /api/mail/send — compose or reply, multipart/form-data so attachments can ride along
 // Fields: to, cc?, subject, text, inReplyToText? — Files: attachments[] (up to 5)
 router.post('/send', requireAuth, uploadAttachments, async (req, res) => {
