@@ -8,6 +8,7 @@ const { simpleParser } = require('mailparser');
 const sanitizeHtml = require('sanitize-html');
 
 const PAGE_SIZE = 25;
+const TRASH_FOLDER = 'Trash';
 
 function isConfigured() {
   return !!(process.env.IMAP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -148,6 +149,22 @@ async function getAttachment({ folder = 'INBOX', uid, index }) {
   });
 }
 
+// Deleting from Trash itself is permanent (flag + EXPUNGE); deleting from
+// anywhere else moves the message to Trash, same as every webmail client —
+// recoverable, not gone.
+async function deleteMessage({ folder = 'INBOX', uid }) {
+  return withClient(async (client) => {
+    await client.mailboxOpen(folder);
+    if (folder === TRASH_FOLDER) {
+      await client.messageFlagsAdd(String(uid), ['\\Deleted'], { uid: true });
+      await client.messageDelete(String(uid), { uid: true });
+      return { ok: true, permanent: true };
+    }
+    await client.messageMove(String(uid), TRASH_FOLDER, { uid: true });
+    return { ok: true, permanent: false };
+  });
+}
+
 async function setSeen({ folder = 'INBOX', uid, seen }) {
   return withClient(async (client) => {
     await client.mailboxOpen(folder);
@@ -160,4 +177,4 @@ async function setSeen({ folder = 'INBOX', uid, seen }) {
   });
 }
 
-module.exports = { isConfigured, listMessages, searchMessages, getMessage, getAttachment, setSeen };
+module.exports = { isConfigured, listMessages, searchMessages, getMessage, getAttachment, setSeen, deleteMessage, TRASH_FOLDER };
