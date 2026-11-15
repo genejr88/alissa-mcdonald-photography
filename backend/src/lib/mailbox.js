@@ -9,6 +9,7 @@ const sanitizeHtml = require('sanitize-html');
 
 const PAGE_SIZE = 25;
 const TRASH_FOLDER = 'Trash';
+const SENT_FOLDER = 'Sent';
 
 function isConfigured() {
   return !!(process.env.IMAP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
@@ -165,6 +166,17 @@ async function deleteMessage({ folder = 'INBOX', uid }) {
   });
 }
 
+// Saves a raw RFC822 message into the Sent folder — used to keep Zoho's
+// Sent folder in sync when mail actually goes out through Resend (an HTTP
+// API call, not an IMAP/SMTP action, so the mailbox has no idea it happened
+// unless we tell it explicitly).
+async function appendMessage({ folder = SENT_FOLDER, raw, flags = ['\\Seen'] } = {}) {
+  return withClient(async (client) => {
+    await client.append(folder, raw, flags, new Date());
+    return { ok: true };
+  });
+}
+
 async function setSeen({ folder = 'INBOX', uid, seen }) {
   return withClient(async (client) => {
     await client.mailboxOpen(folder);
@@ -177,4 +189,7 @@ async function setSeen({ folder = 'INBOX', uid, seen }) {
   });
 }
 
-module.exports = { isConfigured, listMessages, searchMessages, getMessage, getAttachment, setSeen, deleteMessage, TRASH_FOLDER };
+module.exports = {
+  isConfigured, listMessages, searchMessages, getMessage, getAttachment, setSeen,
+  deleteMessage, appendMessage, TRASH_FOLDER, SENT_FOLDER,
+};
