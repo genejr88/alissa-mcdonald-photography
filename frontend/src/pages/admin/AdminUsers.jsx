@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { useAuth } from '../../lib/auth';
 import {
   adminGetUsers,
@@ -7,7 +9,20 @@ import {
   adminResetUserPassword,
   adminDeleteUser,
   changePassword,
+  getMyMailbox,
+  saveMyMailbox,
+  disconnectMyMailbox,
 } from '../../lib/api';
+
+const SIGNATURE_QUILL_MODULES = {
+  toolbar: [
+    [{ font: [] }, { size: [] }],
+    ['bold', 'italic', 'underline'],
+    [{ color: [] }],
+    ['link'],
+    ['clean'],
+  ],
+};
 
 function errMsg(e) {
   return e?.response?.data?.error || 'Something went wrong';
@@ -49,6 +64,104 @@ function ChangeMyPassword() {
         <button type="submit" disabled={mutation.isPending} className="rounded bg-ink px-4 py-2 text-sm text-paper disabled:opacity-50">
           {mutation.isPending ? 'Saving…' : 'Update password'}
         </button>
+      </form>
+    </div>
+  );
+}
+
+// ── My mailbox ────────────────────────────────────────────────────────────────
+// Each admin connects their own IMAP inbox here — the Mail page shows a
+// different inbox depending on who's signed in, rather than one shared one.
+function MyMailbox() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({ queryKey: ['my-mailbox'], queryFn: getMyMailbox });
+  const [form, setForm] = useState({ imapHost: '', imapPort: 993, mailUser: '', password: '', fromName: '', signature: '' });
+  const [msg, setMsg] = useState(null);
+
+  useEffect(() => {
+    if (data) {
+      setForm((f) => ({
+        ...f,
+        imapHost: data.imapHost,
+        imapPort: data.imapPort,
+        mailUser: data.mailUser,
+        fromName: data.fromName,
+        signature: data.signature,
+      }));
+    }
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: () => saveMyMailbox(form),
+    onSuccess: () => {
+      setMsg({ ok: true, text: 'Mailbox saved.' });
+      setForm((f) => ({ ...f, password: '' }));
+      qc.invalidateQueries({ queryKey: ['my-mailbox'] });
+      qc.invalidateQueries({ queryKey: ['mail-config'] });
+    },
+    onError: (e) => setMsg({ ok: false, text: errMsg(e) }),
+  });
+
+  const disconnect = useMutation({
+    mutationFn: disconnectMyMailbox,
+    onSuccess: () => {
+      setForm({ imapHost: '', imapPort: 993, mailUser: '', password: '', fromName: '', signature: '' });
+      setMsg({ ok: true, text: 'Mailbox disconnected.' });
+      qc.invalidateQueries({ queryKey: ['my-mailbox'] });
+      qc.invalidateQueries({ queryKey: ['mail-config'] });
+    },
+  });
+
+  if (isLoading) return null;
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const input = 'w-full border border-ink/20 bg-transparent px-3 py-2 text-sm outline-none focus:border-ink';
+
+  return (
+    <div className="rounded border border-ink/10 bg-paper p-6">
+      <h2 className="mb-1 text-sm font-medium">My mailbox</h2>
+      <p className="mb-4 text-xs text-ink-soft">
+        {data?.configured
+          ? `Connected as ${data.mailUser}. The Mail page reads and sends from this inbox while you're signed in.`
+          : "Connect your own email account's IMAP settings so the Mail page shows your inbox while you're signed in."}
+      </p>
+      <form onSubmit={(e) => { e.preventDefault(); setMsg(null); save.mutate(); }} className="max-w-md space-y-3">
+        <input placeholder="IMAP host (e.g. imappro.zoho.com)" value={form.imapHost} onChange={set('imapHost')} required className={input} />
+        <input type="number" placeholder="IMAP port (default 993)" value={form.imapPort} onChange={set('imapPort')} className={input} />
+        <input placeholder="Mailbox email address" value={form.mailUser} onChange={set('mailUser')} required className={input} />
+        <input
+          type="password"
+          placeholder={data?.configured ? 'New password (leave blank to keep current)' : 'Password'}
+          value={form.password}
+          onChange={set('password')}
+          className={input}
+        />
+        <input placeholder="Display name (optional)" value={form.fromName} onChange={set('fromName')} className={input} />
+        <div>
+          <label className="mb-1 block text-xs text-ink-soft">Email signature (optional)</label>
+          <div className="overflow-hidden rounded border border-ink/20 bg-paper [&_.ql-editor]:min-h-[100px] [&_.ql-editor]:text-sm">
+            <ReactQuill
+              theme="snow"
+              value={form.signature}
+              onChange={(v) => setForm((f) => ({ ...f, signature: v }))}
+              modules={SIGNATURE_QUILL_MODULES}
+            />
+          </div>
+        </div>
+        {msg && <p className={`text-sm ${msg.ok ? 'text-green-700' : 'text-red-600'}`}>{msg.text}</p>}
+        <div className="flex items-center gap-4 pt-1">
+          <button type="submit" disabled={save.isPending} className="rounded bg-ink px-4 py-2 text-sm text-paper disabled:opacity-50">
+            {save.isPending ? 'Saving…' : data?.configured ? 'Update mailbox' : 'Connect mailbox'}
+          </button>
+          {data?.configured && (
+            <button
+              type="button"
+              onClick={() => { if (confirm('Disconnect your mailbox? The Mail page will stop working until you reconnect it.')) disconnect.mutate(); }}
+              className="text-xs text-red-500 hover:text-red-700"
+            >
+              Disconnect
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );
@@ -201,6 +314,7 @@ export default function AdminUsers() {
         ))}
       </div>
 
+      <MyMailbox />
       <ChangeMyPassword />
     </div>
   );
