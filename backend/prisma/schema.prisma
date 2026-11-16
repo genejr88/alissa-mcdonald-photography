@@ -126,6 +126,13 @@ model Booking {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
+  // Square deposit payment link — created when the booking is confirmed
+  // (if the service has a depositAmount) and resolved by the Square
+  // webhook once payment completes.
+  squareOrderId         String? @unique
+  squarePaymentLinkUrl  String?
+  squarePaymentId       String?
+
   @@index([startsAt])
 }
 

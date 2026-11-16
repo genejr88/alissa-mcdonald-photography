@@ -15,9 +15,15 @@ const inquiriesRoutes = require('./routes/inquiries');
 const guestbookRoutes = require('./routes/guestbook');
 const mailRoutes = require('./routes/mail');
 const timeRequestsRoutes = require('./routes/timeRequests');
+const squareRoutes = require('./routes/square');
 
 const app = express();
 app.use(cors());
+
+// Square signs webhooks over the raw request body, so this route must see
+// unparsed bytes — it's mounted before the app-wide JSON parser below.
+app.use('/api/square', squareRoutes);
+
 app.use(express.json({ limit: '10mb' })); // signature canvas payloads
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
