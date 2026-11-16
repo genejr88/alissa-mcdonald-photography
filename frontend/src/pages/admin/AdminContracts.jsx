@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   adminGetContracts,
+  adminDeleteContract,
   adminGetContractTemplates,
   adminCreateContractTemplate,
   adminUpdateContractTemplate,
@@ -541,6 +542,11 @@ export default function AdminContracts() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['contract-templates'] }); setEditTemplate(null); },
   });
 
+  const deleteContract = useMutation({
+    mutationFn: adminDeleteContract,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-contracts'] }),
+  });
+
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -620,6 +626,16 @@ export default function AdminContracts() {
                           Preview ↗
                         </a>
                       )}
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete this contract${c.booking?.clientName ? ` for ${c.booking.clientName}` : ''}? This cannot be undone.`)) {
+                            deleteContract.mutate(c.id);
+                          }
+                        }}
+                        className="text-xs px-3 py-1.5 rounded border border-red-100 text-red-400 hover:bg-red-50 transition-colors"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
