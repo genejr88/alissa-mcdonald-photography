@@ -1,7 +1,12 @@
 // Thin wrapper around ImapFlow for the admin inbox view. Opens a fresh
-// connection per call and closes it — this is a low-traffic, single-user
-// admin tool, not a long-lived mail server, so there's no connection pool
-// to manage and nothing to leak if the process restarts mid-request.
+// connection per call and closes it — this is a low-traffic admin tool,
+// not a long-lived mail server, so there's no connection pool to manage
+// and nothing to leak if the process restarts mid-request.
+//
+// Every function here takes a `config` object ({ host, port, user, pass })
+// as its first argument — there used to be one global mailbox read from
+// env vars, but each admin now connects their own, so the caller (routes/
+// mail.js) is responsible for loading the right one for whoever is signed in.
 
 const { ImapFlow } = require('imapflow');
 const { simpleParser } = require('mailparser');
@@ -11,19 +16,19 @@ const PAGE_SIZE = 25;
 const TRASH_FOLDER = 'Trash';
 const SENT_FOLDER = 'Sent';
 
-function isConfigured() {
-  return !!(process.env.IMAP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+function isConfigured(config) {
+  return !!(config?.host && config?.user && config?.pass);
 }
 
-async function withClient(fn) {
-  if (!isConfigured()) {
-    throw new Error('Mailbox is not configured — set IMAP_HOST, SMTP_USER, SMTP_PASS.');
+async function withClient(config, fn) {
+  if (!isConfigured(config)) {
+    throw new Error('Mailbox is not configured — connect it from Users → My Mailbox.');
   }
   const client = new ImapFlow({
-    host: process.env.IMAP_HOST,
-    port: parseInt(process.env.IMAP_PORT || '993', 10),
+    host: config.host,
+    port: config.port || 993,
     secure: true,
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+    auth: { user: config.user, pass: config.pass },
     logger: false,
   });
   await client.connect();
@@ -43,8 +48,8 @@ function formatEnvelopeAddress(list) {
 }
 
 // GET a page of messages, most recent first — envelope data only (fast).
-async function listMessages({ folder = 'INBOX', page = 1 } = {}) {
-  return withClient(async (client) => {
+async function listMessages(config, { folder = 'INBOX', page = 1 } = {}) {
+  return withClient(config, async (client) => {
     const mailbox = await client.mailboxOpen(folder);
     const total = mailbox.exists;
     if (total === 0) return { messages: [], total: 0, page, pageSize: PAGE_SIZE };
@@ -69,8 +74,8 @@ async function listMessages({ folder = 'INBOX', page = 1 } = {}) {
 }
 
 // GET one full message, parsed and sanitized.
-async function getMessage({ folder = 'INBOX', uid }) {
-  return withClient(async (client) => {
+async function getMessage(config, { folder = 'INBOX', uid }) {
+  return withClient(config, async (client) => {
     await client.mailboxOpen(folder);
     const { content } = await client.download(uid, undefined, { uid: true });
     const parsed = await simpleParser(content);
@@ -102,8 +107,8 @@ async function getMessage({ folder = 'INBOX', uid }) {
 
 // Search subject+from+body in one pass (IMAP TEXT searches header and body),
 // paginated the same shape as listMessages so the frontend can reuse it.
-async function searchMessages({ folder = 'INBOX', query, page = 1 } = {}) {
-  return withClient(async (client) => {
+async function searchMessages(config, { folder = 'INBOX', query, page = 1 } = {}) {
+  return withClient(config, async (client) => {
     await client.mailboxOpen(folder);
     const uids = await client.search({ text: query }, { uid: true });
     if (!uids || uids.length === 0) return { messages: [], total: 0, page, pageSize: PAGE_SIZE };
@@ -135,8 +140,8 @@ async function searchMessages({ folder = 'INBOX', query, page = 1 } = {}) {
 // One specific attachment's raw content, for download — re-fetches and
 // re-parses the message rather than caching, same stateless-per-call shape
 // as everything else here.
-async function getAttachment({ folder = 'INBOX', uid, index }) {
-  return withClient(async (client) => {
+async function getAttachment(config, { folder = 'INBOX', uid, index }) {
+  return withClient(config, async (client) => {
     await client.mailboxOpen(folder);
     const { content } = await client.download(uid, undefined, { uid: true });
     const parsed = await simpleParser(content);
@@ -153,8 +158,8 @@ async function getAttachment({ folder = 'INBOX', uid, index }) {
 // Deleting from Trash itself is permanent (flag + EXPUNGE); deleting from
 // anywhere else moves the message to Trash, same as every webmail client —
 // recoverable, not gone.
-async function deleteMessage({ folder = 'INBOX', uid }) {
-  return withClient(async (client) => {
+async function deleteMessage(config, { folder = 'INBOX', uid }) {
+  return withClient(config, async (client) => {
     await client.mailboxOpen(folder);
     if (folder === TRASH_FOLDER) {
       await client.messageFlagsAdd(String(uid), ['\\Deleted'], { uid: true });
@@ -166,19 +171,19 @@ async function deleteMessage({ folder = 'INBOX', uid }) {
   });
 }
 
-// Saves a raw RFC822 message into the Sent folder — used to keep Zoho's
-// Sent folder in sync when mail actually goes out through Resend (an HTTP
-// API call, not an IMAP/SMTP action, so the mailbox has no idea it happened
-// unless we tell it explicitly).
-async function appendMessage({ folder = SENT_FOLDER, raw, flags = ['\\Seen'] } = {}) {
-  return withClient(async (client) => {
+// Saves a raw RFC822 message into the Sent folder — used to keep the
+// mailbox's Sent folder in sync when mail actually goes out through Resend
+// (an HTTP API call, not an IMAP/SMTP action, so the mailbox has no idea it
+// happened unless we tell it explicitly).
+async function appendMessage(config, { folder = SENT_FOLDER, raw, flags = ['\\Seen'] } = {}) {
+  return withClient(config, async (client) => {
     await client.append(folder, raw, flags, new Date());
     return { ok: true };
   });
 }
 
-async function setSeen({ folder = 'INBOX', uid, seen }) {
-  return withClient(async (client) => {
+async function setSeen(config, { folder = 'INBOX', uid, seen }) {
+  return withClient(config, async (client) => {
     await client.mailboxOpen(folder);
     if (seen) {
       await client.messageFlagsAdd(String(uid), ['\\Seen'], { uid: true });

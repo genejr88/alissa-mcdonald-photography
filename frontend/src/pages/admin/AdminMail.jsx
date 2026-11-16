@@ -1,10 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import {
   getMailConfig, getMailMessages, searchMailMessages, getMailMessage, setMailSeen,
   deleteMailMessage, sendMailMessage, downloadMailAttachment,
   adminGetContractTemplates, adminSendContract,
 } from '../../lib/api';
+
+const QUILL_MODULES = {
+  toolbar: [
+    [{ font: [] }, { size: [] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ color: [] }, { background: [] }],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link'],
+    ['clean'],
+  ],
+};
 
 const FOLDERS = [['INBOX', 'Inbox'], ['Sent', 'Sent'], ['Trash', 'Trash']];
 
@@ -91,18 +104,30 @@ function Avatar({ from, seen }) {
 }
 
 function ComposeForm({ defaultTo = '', defaultSubject = '', quoteText = '', onSent, onCancel }) {
+  const { data: config } = useQuery({ queryKey: ['mail-config'], queryFn: getMailConfig });
   const [to, setTo] = useState(defaultTo);
   const [cc, setCc] = useState('');
   const [subject, setSubject] = useState(defaultSubject);
-  const [text, setText] = useState('');
+  const [html, setHtml] = useState('');
   const [files, setFiles] = useState([]);
+  const signaturePrefilled = useRef(false);
+
+  // Prefill the signature once it loads, but only if the editor is still
+  // untouched — this must not clobber whatever the admin has already typed.
+  useEffect(() => {
+    if (config?.signature && !signaturePrefilled.current && !html) {
+      signaturePrefilled.current = true;
+      setHtml(`<p><br></p><p><br></p>${config.signature}`);
+    }
+  }, [config?.signature, html]);
 
   const send = useMutation({
-    mutationFn: () => sendMailMessage({ to, cc: cc || undefined, subject, text, inReplyToText: quoteText || undefined, files }),
+    mutationFn: () => sendMailMessage({ to, cc: cc || undefined, subject, html, inReplyToText: quoteText || undefined, files }),
     onSuccess: () => onSent?.(),
   });
 
   const removeFile = (idx) => setFiles((fs) => fs.filter((_, i) => i !== idx));
+  const isEmpty = (h) => !h || h.replace(/<(.|\n)*?>/g, '').trim() === '';
 
   return (
     <div className="mt-3 space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-5">
@@ -135,12 +160,9 @@ function ComposeForm({ defaultTo = '', defaultSubject = '', quoteText = '', onSe
       </div>
       <div>
         <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-gray-400">Message</label>
-        <textarea
-          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm leading-relaxed transition-colors focus:border-accent/50 focus:outline-none focus:ring-2 focus:ring-accent/10"
-          rows={6}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white [&_.ql-toolbar]:rounded-t-lg [&_.ql-toolbar]:border-gray-200 [&_.ql-container]:rounded-b-lg [&_.ql-container]:border-gray-200 [&_.ql-editor]:min-h-[160px] [&_.ql-editor]:text-sm">
+          <ReactQuill theme="snow" value={html} onChange={setHtml} modules={QUILL_MODULES} />
+        </div>
       </div>
       <div>
         <label className="mb-2 flex cursor-pointer items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-gray-400 hover:text-gray-600">
@@ -163,7 +185,7 @@ function ComposeForm({ defaultTo = '', defaultSubject = '', quoteText = '', onSe
       )}
       <div className="flex gap-3 pt-1">
         <button
-          disabled={!to || !subject || !text || send.isPending}
+          disabled={!to || !subject || isEmpty(html) || send.isPending}
           onClick={() => send.mutate()}
           className="rounded-lg bg-ink px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-paper shadow-sm transition-all hover:shadow-md disabled:opacity-40 disabled:shadow-none"
         >
@@ -447,9 +469,9 @@ export default function AdminMail() {
         <h1 className="mb-6 font-serif text-3xl">Mail</h1>
         <div className="rounded-xl border border-gray-100 bg-white p-10 text-center text-gray-400">
           <p className="text-sm">
-            Mailbox isn&rsquo;t connected yet — add <code className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-600">IMAP_HOST</code>,{' '}
-            <code className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-600">SMTP_USER</code>, and{' '}
-            <code className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-600">SMTP_PASS</code> in Railway to turn this on.
+            You haven&rsquo;t connected a mailbox yet — go to{' '}
+            <a href="/admin/users" className="font-medium text-accent underline">Users → My Mailbox</a>{' '}
+            to connect your own email account.
           </p>
         </div>
       </div>

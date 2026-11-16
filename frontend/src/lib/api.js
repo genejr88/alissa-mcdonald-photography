@@ -29,6 +29,11 @@ export const adminResetUserPassword = (id, newPassword) =>
   api.put(`/auth/users/${id}/password`, { newPassword }).then((r) => r.data);
 export const adminDeleteUser = (id) => api.delete(`/auth/users/${id}`).then((r) => r.data);
 
+// ---- My mailbox (per-admin IMAP connection for the Mail page) ----
+export const getMyMailbox = () => api.get('/auth/mailbox').then((r) => r.data);
+export const saveMyMailbox = (data) => api.put('/auth/mailbox', data).then((r) => r.data);
+export const disconnectMyMailbox = () => api.delete('/auth/mailbox').then((r) => r.data);
+
 // ---- Settings ----
 export const getPublicSettings = () => api.get('/settings/public').then((r) => r.data);
 export const getSettings = () => api.get('/settings').then((r) => r.data);
@@ -174,12 +179,12 @@ export const downloadMailAttachment = async (folder, uid, index, filename) => {
 // Setting a bare 'multipart/form-data' string overrides that and strips the
 // boundary, which left the server waiting for a delimiter that never
 // arrives: the request just hangs forever with no error either side.
-export const sendMailMessage = ({ to, cc, subject, text, inReplyToText, files }) => {
+export const sendMailMessage = ({ to, cc, subject, html, inReplyToText, files }) => {
   const form = new FormData();
   form.append('to', to);
   if (cc) form.append('cc', cc);
   form.append('subject', subject);
-  form.append('text', text);
+  form.append('html', html);
   if (inReplyToText) form.append('inReplyToText', inReplyToText);
   (files || []).forEach((f) => form.append('attachments', f));
   return api.post('/mail/send', form).then((r) => r.data);

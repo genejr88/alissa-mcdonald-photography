@@ -104,4 +104,33 @@ async function sendMail({ to, cc, subject, text, html, replyTo, attachments }) {
   await saveToSent(mail);
 }
 
-module.exports = { sendMail };
+// Appends a sent copy into a SPECIFIC admin's own IMAP Sent folder, using
+// their own credentials — distinct from saveToSent() above, which always
+// targets the single global mailbox used for system/transactional mail.
+async function saveToSentFor(mailboxConfig, mail) {
+  try {
+    const mailbox = require('./mailbox');
+    if (!mailbox.isConfigured(mailboxConfig)) return;
+    const raw = await buildRawMessage(mail);
+    await mailbox.appendMessage(mailboxConfig, { folder: mailbox.SENT_FOLDER, raw, flags: ['\\Seen'] });
+  } catch (e) {
+    console.error('[mail] could not save sent copy to Sent folder:', e.message);
+  }
+}
+
+// Used by the admin Mail page: sends as a specific admin's own mailbox
+// identity (their connected address, optionally with a display name) and
+// syncs the sent copy into THEIR Sent folder, not the shared one.
+async function sendFromMailbox({ mailboxConfig, to, cc, subject, text, html, replyTo, attachments }) {
+  const from = mailboxConfig.fromName ? `"${mailboxConfig.fromName}" <${mailboxConfig.user}>` : mailboxConfig.user;
+  const mail = { from, to, cc, subject, text, html: html || text, replyTo, attachments };
+
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`[MAIL skipped — no Resend configured] To: ${to}\nSubject: ${subject}\n${text}`);
+    return;
+  }
+  await sendViaResend(mail);
+  await saveToSentFor(mailboxConfig, mail);
+}
+
+module.exports = { sendMail, sendFromMailbox };

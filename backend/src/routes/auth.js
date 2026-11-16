@@ -2,6 +2,18 @@ const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const prisma = require('../lib/prisma');
 const { requireAuth, signToken } = require('../middleware/auth');
+const { encrypt } = require('../lib/crypto');
+const sanitizeHtml = require('sanitize-html');
+
+// Same rationale as routes/mail.js: Quill's HTML export has an open XSS
+// advisory, so sanitize before this is stored and reused on every send.
+function sanitizeSignature(html) {
+  return sanitizeHtml(html, {
+    allowedTags: sanitizeHtml.defaults.allowedTags.filter((t) => t !== 'script' && t !== 'style'),
+    allowedAttributes: { '*': ['style', 'href', 'alt', 'title'] },
+    allowedSchemes: ['http', 'https', 'mailto'],
+  });
+}
 
 // POST /api/auth/login — username OR email
 router.post('/login', async (req, res, next) => {
@@ -48,6 +60,63 @@ router.put('/password', requireAuth, async (req, res, next) => {
     await prisma.user.update({
       where: { id: user.id },
       data: { passwordHash: await bcrypt.hash(newPassword, 10) },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── My mailbox (each admin connects their own IMAP inbox for the Mail page) ──
+
+// GET /api/auth/mailbox — my own config, password never returned
+router.get('/mailbox', requireAuth, async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    res.json({
+      configured: !!(user.mailImapHost && user.mailUser && user.mailPassEnc),
+      imapHost: user.mailImapHost || '',
+      imapPort: user.mailImapPort || 993,
+      mailUser: user.mailUser || '',
+      fromName: user.mailFromName || '',
+      signature: user.mailSignature || '',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/mailbox', requireAuth, async (req, res, next) => {
+  try {
+    const { imapHost, imapPort, mailUser, password, fromName, signature } = req.body;
+    if (!imapHost || !mailUser) {
+      return res.status(400).json({ error: 'IMAP host and mailbox email address are required.' });
+    }
+    const existing = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!password && !existing.mailPassEnc) {
+      return res.status(400).json({ error: 'A password is required to connect your mailbox.' });
+    }
+    const data = {
+      mailImapHost: imapHost,
+      mailImapPort: imapPort ? parseInt(imapPort, 10) : 993,
+      mailUser,
+      mailFromName: fromName || null,
+      mailSignature: signature != null ? sanitizeSignature(signature) : existing.mailSignature,
+    };
+    if (password) data.mailPassEnc = encrypt(password);
+    await prisma.user.update({ where: { id: req.user.id }, data });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// DELETE /api/auth/mailbox — disconnect my mailbox
+router.delete('/mailbox', requireAuth, async (req, res, next) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { mailImapHost: null, mailImapPort: null, mailUser: null, mailPassEnc: null, mailFromName: null },
     });
     res.json({ ok: true });
   } catch (err) {

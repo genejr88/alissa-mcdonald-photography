@@ -15,6 +15,16 @@ model User {
   name         String
   role         String   @default("ADMIN")
   createdAt    DateTime @default(now())
+
+  // Each admin connects their own IMAP mailbox so the Mail page shows a
+  // different inbox depending on who's signed in. mailPassEnc is encrypted
+  // at rest (see lib/crypto.js) — never read back over the API.
+  mailImapHost  String?
+  mailImapPort  Int?
+  mailUser      String?
+  mailPassEnc   String?
+  mailFromName  String?
+  mailSignature String? // HTML, inserted into new compose/reply bodies
 }
 
 enum GalleryMood {
