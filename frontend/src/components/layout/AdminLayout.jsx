@@ -8,6 +8,7 @@ const adminNav = [
   { to: '/admin/galleries', label: 'Galleries' },
   { to: '/admin/mail', label: 'Mail' },
   { to: '/admin/bookings', label: 'Bookings' },
+  { to: '/admin/accounting', label: 'Accounting' },
   { to: '/admin/services', label: 'Services' },
   { to: '/admin/availability', label: 'Availability' },
   { to: '/admin/contracts', label: 'Contracts' },
