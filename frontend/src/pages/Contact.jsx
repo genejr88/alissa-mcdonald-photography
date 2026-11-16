@@ -31,7 +31,6 @@ export default function Contact() {
     >
       {/* Header */}
       <div className="px-6 pb-12 pt-32 md:px-12">
-        <p className="meta mb-4">№ 05 — Contact</p>
         <h1 className="font-display text-[clamp(2.5rem,7vw,6rem)] font-light leading-[0.95] tracking-[-0.03em]">
           Let&rsquo;s <em className="italic">talk</em>.
         </h1>

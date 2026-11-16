@@ -320,7 +320,6 @@ export default function Guestbook() {
     >
       {/* Header */}
       <div className="px-6 pb-4 pt-32 md:px-12">
-        <p className="meta mb-4">№ 06 — Guest book</p>
         {/* "Welcome" — her actual handwriting */}
         <motion.img
           src={HAND_WELCOME}

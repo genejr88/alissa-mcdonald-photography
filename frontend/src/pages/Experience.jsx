@@ -71,7 +71,6 @@ export default function Experience() {
     >
       {/* Header */}
       <div className="px-6 pb-12 pt-32 md:px-12">
-        <p className="meta mb-4">№ 02 — The experience</p>
         <h1 className="max-w-2xl font-display text-[clamp(2.5rem,7vw,6rem)] font-light leading-[0.95] tracking-[-0.03em]">
           Here&rsquo;s what to <em className="italic">expect</em>.
         </h1>

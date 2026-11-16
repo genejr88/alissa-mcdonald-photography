@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   adminGetContracts,
@@ -34,6 +34,8 @@ function SendModal({ templates, bookings, onClose, onSent }) {
   const [bookingId, setBookingId] = useState('');
   const [templateId, setTemplateId] = useState(templates[0]?.id || '');
   const [manual, setManual] = useState({ clientName: '', clientEmail: '', sessionType: '', sessionDate: '', price: '', deposit: '' });
+  const [includeDepositLink, setIncludeDepositLink] = useState(false);
+  const [depositLinkAmount, setDepositLinkAmount] = useState('');
   const [result, setResult] = useState(null);
 
   const qc = useQueryClient();
@@ -60,7 +62,14 @@ function SendModal({ templates, bookings, onClose, onSent }) {
     ? `$${parseFloat(selectedBooking.service.depositAmount).toFixed(0)}`
     : manual.deposit;
 
-  const canSend = templateId && effectiveName && effectiveEmail;
+  useEffect(() => {
+    if (includeDepositLink && !depositLinkAmount && selectedBooking?.service?.depositAmount) {
+      setDepositLinkAmount(String(selectedBooking.service.depositAmount));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [includeDepositLink, selectedBooking]);
+
+  const canSend = templateId && effectiveName && effectiveEmail && (!includeDepositLink || parseFloat(depositLinkAmount) > 0);
 
   const handleSend = () => {
     send.mutate({
@@ -72,6 +81,8 @@ function SendModal({ templates, bookings, onClose, onSent }) {
       sessionDate: effectiveDate,
       price: effectivePrice,
       deposit: effectiveDeposit,
+      includeDepositLink,
+      depositLinkAmount: includeDepositLink ? depositLinkAmount : undefined,
     });
   };
 
@@ -105,6 +116,14 @@ function SendModal({ templates, bookings, onClose, onSent }) {
                   Done
                 </button>
               </div>
+              {result.depositLinkUrl && (
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <div className="bg-gray-50 rounded p-3 text-sm font-mono text-gray-600 break-all mb-3">
+                    {result.depositLinkUrl}
+                  </div>
+                  <CopyBtn text={result.depositLinkUrl} label="Copy deposit link" />
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -179,6 +198,30 @@ function SendModal({ templates, bookings, onClose, onSent }) {
                     <option key={t.id} value={t.id}>{t.name}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Square deposit link */}
+              <div className="mb-6 rounded border border-gray-200 p-3">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <input
+                    type="checkbox"
+                    checked={includeDepositLink}
+                    onChange={(e) => setIncludeDepositLink(e.target.checked)}
+                  />
+                  Include a Square deposit link in this email
+                </label>
+                {includeDepositLink && (
+                  <div className="mt-3">
+                    <label className="block text-xs uppercase tracking-wide opacity-40 mb-1">Deposit amount ($) *</label>
+                    <input
+                      type="number"
+                      className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none"
+                      value={depositLinkAmount}
+                      onChange={(e) => setDepositLinkAmount(e.target.value)}
+                      placeholder="50"
+                    />
+                  </div>
+                )}
               </div>
 
               {send.isError && (
