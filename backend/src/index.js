@@ -14,6 +14,7 @@ const testimonialsRoutes = require('./routes/testimonials');
 const inquiriesRoutes = require('./routes/inquiries');
 const guestbookRoutes = require('./routes/guestbook');
 const mailRoutes = require('./routes/mail');
+const timeRequestsRoutes = require('./routes/timeRequests');
 
 const app = express();
 app.use(cors());
@@ -32,6 +33,7 @@ app.use('/api/testimonials', testimonialsRoutes);
 app.use('/api/inquiries', inquiriesRoutes);
 app.use('/api/guestbook', guestbookRoutes);
 app.use('/api/mail', mailRoutes);
+app.use('/api/time-requests', timeRequestsRoutes);
 
 // Serve the built frontend (single Railway service)
 const distDir = path.join(__dirname, '../../frontend/dist');

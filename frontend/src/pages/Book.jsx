@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getServices, getAvailableMonth, getAvailableSlots, createBooking } from '../lib/api';
+import { getServices, getAvailableMonth, getAvailableSlots, createBooking, submitTimeRequest } from '../lib/api';
 import { sunsetLocal } from '../lib/sun';
 import WaxSeal from '../components/WaxSeal';
 
@@ -234,8 +234,72 @@ function StepDate({ service, onSelect, onBack }) {
   );
 }
 
+// ── "None of these work" — ask for a different time ─────────────────────────
+function RequestTimeForm({ service, date, onDone }) {
+  const [form, setForm] = useState({ clientName: '', clientEmail: '', clientPhone: '', requestedTime: '', notes: '' });
+  const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const valid = form.clientName.trim() && form.clientEmail.includes('@') && form.requestedTime.trim();
+
+  const submit = useMutation({
+    mutationFn: () =>
+      submitTimeRequest({ serviceName: service?.name, preferredDate: date, ...form }),
+  });
+
+  if (submit.isSuccess) {
+    return (
+      <div className="mt-6 max-w-md rounded-lg border border-current/10 bg-accent/[0.04] p-6">
+        <p className="text-sm">
+          Got it — I&rsquo;ll look into another time and get back to you at {form.clientEmail}.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-6 max-w-md space-y-4 rounded-lg border border-current/10 bg-accent/[0.04] p-6">
+      <Field label="Full name *" value={form.clientName} onChange={(v) => set('clientName', v)} placeholder="Your full name" />
+      <Field label="Email *" type="email" value={form.clientEmail} onChange={(v) => set('clientEmail', v)} placeholder="you@email.com" />
+      <Field label="Phone" type="tel" value={form.clientPhone} onChange={(v) => set('clientPhone', v)} placeholder="Optional" />
+      <div>
+        <label className="block text-xs tracking-widest uppercase opacity-60 mb-2">What would work for you? *</label>
+        <textarea
+          className="w-full border-b border-current/20 bg-transparent py-2 text-sm focus:outline-none focus:border-current/60 resize-none transition-colors"
+          rows={2}
+          value={form.requestedTime}
+          onChange={(e) => set('requestedTime', e.target.value)}
+          placeholder="e.g. mornings next week, or any Saturday in June"
+        />
+      </div>
+      <div>
+        <label className="block text-xs tracking-widest uppercase opacity-60 mb-2">Anything else?</label>
+        <textarea
+          className="w-full border-b border-current/20 bg-transparent py-2 text-sm focus:outline-none focus:border-current/60 resize-none transition-colors"
+          rows={2}
+          value={form.notes}
+          onChange={(e) => set('notes', e.target.value)}
+          placeholder="Optional"
+        />
+      </div>
+      {submit.isError && <p className="text-red-500 text-sm">Something went wrong. Please try again.</p>}
+      <div className="flex items-center gap-4">
+        <button
+          disabled={!valid || submit.isPending}
+          onClick={() => submit.mutate()}
+          className="text-sm tracking-widest uppercase opacity-80 hover:opacity-100 disabled:opacity-50 transition-opacity"
+        >
+          {submit.isPending ? 'Sending…' : 'Send request →'}
+        </button>
+        <button onClick={onDone} className="text-xs tracking-widest uppercase opacity-50 hover:opacity-80 transition-opacity">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Step 3: Choose time ───────────────────────────────────────────────────────
 function StepTime({ service, date, onSelect, onBack }) {
+  const [requestingTime, setRequestingTime] = useState(false);
   const { data: slots, isLoading } = useQuery({
     queryKey: ['slots', service.id, date],
     queryFn: () => getAvailableSlots(service.id, date),
@@ -268,11 +332,20 @@ function StepTime({ service, date, onSelect, onBack }) {
 
       {isLoading && <div className="py-16 text-center opacity-50 text-sm">Loading…</div>}
 
-      {!isLoading && !slots?.length && (
+      {!isLoading && !slots?.length && !requestingTime && (
         <div className="py-16 text-center opacity-60">
           <p className="text-sm tracking-widest uppercase">No times available on this date.</p>
-          <button onClick={onBack} className="mt-4 text-xs underline">Choose another date</button>
+          <div className="mt-4 flex items-center justify-center gap-5">
+            <button onClick={onBack} className="text-xs underline">Choose another date</button>
+            <button onClick={() => setRequestingTime(true)} className="text-xs underline text-accent">
+              Request a different time
+            </button>
+          </div>
         </div>
+      )}
+
+      {!isLoading && !slots?.length && requestingTime && (
+        <RequestTimeForm service={service} date={date} onDone={() => setRequestingTime(false)} />
       )}
 
       <div className="mt-6 grid max-w-xl grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
@@ -304,6 +377,18 @@ function StepTime({ service, date, onSelect, onBack }) {
           );
         })}
       </div>
+
+      {!isLoading && !!slots?.length && !requestingTime && (
+        <button
+          onClick={() => setRequestingTime(true)}
+          className="mt-6 text-xs tracking-widest uppercase opacity-50 underline hover:opacity-80 transition-opacity"
+        >
+          None of these work? Request a different time
+        </button>
+      )}
+      {!isLoading && !!slots?.length && requestingTime && (
+        <RequestTimeForm service={service} date={date} onDone={() => setRequestingTime(false)} />
+      )}
     </div>
   );
 }
