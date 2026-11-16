@@ -79,6 +79,7 @@ export const submitContractSignature = (token, data) =>
 
 // ---- Contracts (admin) ----
 export const adminGetContracts = () => api.get('/contracts/admin').then((r) => r.data);
+export const adminDeleteContract = (id) => api.delete(`/contracts/admin/${id}`).then((r) => r.data);
 export const adminSendContract = (data) => api.post('/contracts/send', data).then((r) => r.data);
 export const adminGetContractTemplates = () => api.get('/contracts/templates').then((r) => r.data);
 export const adminCreateContractTemplate = (data) => api.post('/contracts/templates', data).then((r) => r.data);

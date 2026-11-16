@@ -141,6 +141,17 @@ router.get('/admin', requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// DELETE /api/contracts/admin/:id — remove a sent contract (test entries,
+// mistakes, duplicates). Works on signed contracts too; it's a record, not
+// a protection against deleting history, so the signed PDF link stops
+// working once it's gone.
+router.delete('/admin/:id', requireAuth, async (req, res, next) => {
+  try {
+    await prisma.contract.delete({ where: { id: req.params.id } });
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
 // ── Public: signing ───────────────────────────────────────────────────────────
 
 // GET /api/contracts/sign/:token
