@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminGetBookings, adminUpdateBooking, adminCreateDepositLink } from '../../lib/api';
+import { adminGetBookings, adminCreateBooking, adminUpdateBooking, adminCreateDepositLink, adminGetServices } from '../../lib/api';
 
 const STATUSES = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 
@@ -168,6 +168,99 @@ function BookingRow({ booking, onUpdate }) {
   );
 }
 
+const BLANK_BOOKING = {
+  serviceId: '', date: '', time: '', clientName: '', clientEmail: '', clientPhone: '',
+  notes: '', status: 'CONFIRMED', skipAvailabilityCheck: false, sendConfirmationEmail: true,
+};
+
+function NewBookingForm({ onClose, onCreated }) {
+  const [f, setF] = useState(BLANK_BOOKING);
+  const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+
+  const { data: services } = useQuery({ queryKey: ['admin-services'], queryFn: adminGetServices });
+
+  const create = useMutation({
+    mutationFn: () => adminCreateBooking(f),
+    onSuccess: onCreated,
+  });
+
+  const valid = f.serviceId && f.date && f.time && f.clientName.trim() && f.clientEmail.includes('@');
+  const input = 'w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400';
+  const label = 'block text-xs uppercase tracking-wide opacity-40 mb-1';
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-lg p-5 mb-4 space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className={label}>Service *</label>
+          <select className={input} value={f.serviceId} onChange={(e) => set('serviceId', e.target.value)}>
+            <option value="">Select a service…</option>
+            {services?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={label}>Status</label>
+          <select className={input} value={f.status} onChange={(e) => set('status', e.target.value)}>
+            <option value="CONFIRMED">Confirmed</option>
+            <option value="PENDING">Pending</option>
+          </select>
+        </div>
+        <div>
+          <label className={label}>Date *</label>
+          <input type="date" className={input} value={f.date} onChange={(e) => set('date', e.target.value)} />
+        </div>
+        <div>
+          <label className={label}>Time *</label>
+          <input type="time" className={input} value={f.time} onChange={(e) => set('time', e.target.value)} />
+        </div>
+        <div>
+          <label className={label}>Client name *</label>
+          <input className={input} value={f.clientName} onChange={(e) => set('clientName', e.target.value)} />
+        </div>
+        <div>
+          <label className={label}>Client email *</label>
+          <input type="email" className={input} value={f.clientEmail} onChange={(e) => set('clientEmail', e.target.value)} />
+        </div>
+        <div>
+          <label className={label}>Client phone</label>
+          <input className={input} value={f.clientPhone} onChange={(e) => set('clientPhone', e.target.value)} placeholder="Optional" />
+        </div>
+      </div>
+      <div>
+        <label className={label}>Notes</label>
+        <textarea className={`${input} resize-none`} rows={2} value={f.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Optional" />
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input type="checkbox" checked={f.skipAvailabilityCheck} onChange={(e) => set('skipAvailabilityCheck', e.target.checked)} />
+          Override availability check (book this time even if it conflicts)
+        </label>
+        {f.status === 'CONFIRMED' && (
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={f.sendConfirmationEmail} onChange={(e) => set('sendConfirmationEmail', e.target.checked)} />
+            Email confirmation to client
+          </label>
+        )}
+      </div>
+      {create.isError && (
+        <p className="text-red-500 text-sm">{create.error?.response?.data?.error || 'Failed to create booking.'}</p>
+      )}
+      <div className="flex gap-3 pt-1">
+        <button
+          disabled={!valid || create.isPending}
+          onClick={() => create.mutate()}
+          className="bg-black text-white px-5 py-2 text-xs tracking-widest uppercase rounded hover:bg-gray-800 transition-colors disabled:opacity-40"
+        >
+          {create.isPending ? 'Creating…' : 'Create Booking'}
+        </button>
+        <button onClick={onClose} className="border border-gray-200 px-5 py-2 text-xs tracking-widest uppercase rounded hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ActionButton({ children, onClick, className = '' }) {
   return (
     <button
@@ -182,6 +275,7 @@ function ActionButton({ children, onClick, className = '' }) {
 export default function AdminBookings() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState('upcoming');
+  const [creating, setCreating] = useState(false);
 
   const params = filter === 'upcoming'
     ? { upcoming: 'true' }
@@ -202,8 +296,25 @@ export default function AdminBookings() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-serif text-3xl">Bookings</h1>
-        <span className="text-sm opacity-40">{bookings?.length ?? 0} shown</span>
+        <div className="flex items-center gap-4">
+          <span className="text-sm opacity-40">{bookings?.length ?? 0} shown</span>
+          {!creating && (
+            <button
+              onClick={() => setCreating(true)}
+              className="bg-black text-white px-4 py-2 text-xs tracking-widest uppercase rounded hover:bg-gray-800 transition-colors"
+            >
+              + New Booking
+            </button>
+          )}
+        </div>
       </div>
+
+      {creating && (
+        <NewBookingForm
+          onClose={() => setCreating(false)}
+          onCreated={() => { setCreating(false); qc.invalidateQueries({ queryKey: ['admin-bookings'] }); }}
+        />
+      )}
 
       {/* Filter tabs */}
       <div className="flex gap-2 mb-6 flex-wrap">

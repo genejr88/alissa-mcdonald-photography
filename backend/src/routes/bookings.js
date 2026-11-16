@@ -190,6 +190,27 @@ async function ensureDepositLink(booking) {
   }
 }
 
+// Shared with the admin-create route below — same "you're confirmed" email
+// the public flow sends when a pending booking is confirmed.
+async function sendConfirmedEmail(booking, timezone) {
+  const displayTime = formatLocalDateTime(booking.startsAt, timezone);
+  const clientLink = `${BASE_URL}/booking/${booking.token}`;
+  const contractLink = `${BASE_URL}/contract`;
+  const depositLine = booking.squarePaymentLinkUrl
+    ? `\n\nPlease pay your deposit here to secure your spot:\n${booking.squarePaymentLinkUrl}`
+    : '';
+  const depositHtml = booking.squarePaymentLinkUrl
+    ? `<p><a href="${booking.squarePaymentLinkUrl}" style="font-weight:bold;">Pay your deposit →</a></p>`
+    : '';
+
+  return sendMail({
+    to: booking.clientEmail,
+    subject: `You're confirmed! — Alissa McDonald Photography`,
+    text: `Hi ${booking.clientName},\n\nYour ${booking.service.name} is confirmed for ${displayTime}.\n\nBefore your session, please complete the photography contract here:\n${contractLink}${depositLine}\n\nView your booking details: ${clientLink}\n\nSo excited to work with you!\n— Alissa`,
+    html: `<p>Hi ${booking.clientName},</p><p>Your <strong>${booking.service.name}</strong> is confirmed for <strong>${displayTime}</strong>.</p><p>Please complete your <a href="${contractLink}">photography contract</a> before your session.</p>${depositHtml}<p><a href="${clientLink}">View booking details →</a></p><p>So excited to work with you!<br>— Alissa</p>`,
+  });
+}
+
 // PUT /api/bookings/admin/:id — update status / notes / depositPaid
 router.put('/admin/:id', requireAuth, async (req, res, next) => {
   try {
@@ -209,27 +230,75 @@ router.put('/admin/:id', requireAuth, async (req, res, next) => {
     // Email client on confirm
     if (status === 'CONFIRMED' && prev?.status !== 'CONFIRMED') {
       booking = await ensureDepositLink(booking);
-
       const timezone = await getTimezone();
-      const displayTime = formatLocalDateTime(booking.startsAt, timezone);
-      const clientLink = `${BASE_URL}/booking/${booking.token}`;
-      const contractLink = `${BASE_URL}/contract`;
-      const depositLine = booking.squarePaymentLinkUrl
-        ? `\n\nPlease pay your deposit here to secure your spot:\n${booking.squarePaymentLinkUrl}`
-        : '';
-      const depositHtml = booking.squarePaymentLinkUrl
-        ? `<p><a href="${booking.squarePaymentLinkUrl}" style="font-weight:bold;">Pay your deposit →</a></p>`
-        : '';
-
-      sendMail({
-        to: booking.clientEmail,
-        subject: `You're confirmed! — Alissa McDonald Photography`,
-        text: `Hi ${booking.clientName},\n\nYour ${booking.service.name} is confirmed for ${displayTime}.\n\nBefore your session, please complete the photography contract here:\n${contractLink}${depositLine}\n\nView your booking details: ${clientLink}\n\nSo excited to work with you!\n— Alissa`,
-        html: `<p>Hi ${booking.clientName},</p><p>Your <strong>${booking.service.name}</strong> is confirmed for <strong>${displayTime}</strong>.</p><p>Please complete your <a href="${contractLink}">photography contract</a> before your session.</p>${depositHtml}<p><a href="${clientLink}">View booking details →</a></p><p>So excited to work with you!<br>— Alissa</p>`,
-      }).catch(console.error);
+      sendConfirmedEmail(booking, timezone).catch(console.error);
     }
 
     res.json(booking);
+  } catch (e) { next(e); }
+});
+
+// POST /api/bookings/admin — staff creating a booking directly (phone call,
+// walk-in, etc.), as opposed to the public flow above. Defaults to
+// CONFIRMED since a staff member entering this already knows it's happening;
+// PENDING is available too if it still needs confirming later.
+router.post('/admin', requireAuth, async (req, res, next) => {
+  try {
+    const {
+      serviceId, date, time, clientName, clientEmail, clientPhone, notes,
+      status = 'CONFIRMED', skipAvailabilityCheck, sendConfirmationEmail = true,
+    } = req.body;
+
+    if (!serviceId || !date || !time || !clientName || !clientEmail) {
+      return res.status(400).json({ error: 'Service, date, time, client name, and email are required.' });
+    }
+    if (!['PENDING', 'CONFIRMED'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be PENDING or CONFIRMED.' });
+    }
+
+    const [service, rules, exceptions, timezone] = await Promise.all([
+      prisma.service.findUnique({ where: { id: serviceId } }),
+      prisma.availabilityRule.findMany(),
+      prisma.availabilityException.findMany(),
+      getTimezone(),
+    ]);
+    if (!service) return res.status(404).json({ error: 'Service not found.' });
+
+    const startsAt = studioTimeToUtc(date, time, timezone);
+    const endsAt = new Date(startsAt.getTime() + service.durationMin * 60000);
+
+    if (!skipAvailabilityCheck) {
+      const existing = await prisma.booking.findMany({
+        where: {
+          status: { notIn: ['CANCELLED'] },
+          startsAt: { gte: new Date(startsAt.getTime() - (service.durationMin + service.bufferMin * 2) * 60000) },
+          endsAt: { lte: new Date(endsAt.getTime() + (service.durationMin + service.bufferMin * 2) * 60000) },
+        },
+      });
+      const available = getAvailableSlots(date, service, rules, exceptions, existing, timezone);
+      if (!available.includes(time)) {
+        return res.status(409).json({ error: 'That slot conflicts with an existing booking or your schedule. Check "override" to book it anyway.' });
+      }
+    }
+
+    let booking = await prisma.booking.create({
+      data: {
+        serviceId, clientName, clientEmail,
+        clientPhone: clientPhone || null,
+        notes: notes || null,
+        startsAt, endsAt, status,
+      },
+      include: { service: true },
+    });
+
+    if (status === 'CONFIRMED') {
+      booking = await ensureDepositLink(booking);
+      if (sendConfirmationEmail) {
+        sendConfirmedEmail(booking, timezone).catch(console.error);
+      }
+    }
+
+    res.status(201).json(booking);
   } catch (e) { next(e); }
 });
 
