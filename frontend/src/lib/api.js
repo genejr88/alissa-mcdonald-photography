@@ -143,6 +143,13 @@ export const submitInquiry = (data) => api.post('/inquiries', data).then((r) => 
 export const adminGetInquiries = () => api.get('/inquiries/admin').then((r) => r.data);
 export const adminUpdateInquiry = (id, data) => api.put(`/inquiries/admin/${id}`, data).then((r) => r.data);
 
+// ---- Time requests (public — "none of these times work") ----
+export const submitTimeRequest = (data) => api.post('/time-requests', data).then((r) => r.data);
+
+// ---- Time requests (admin) ----
+export const adminGetTimeRequests = () => api.get('/time-requests/admin').then((r) => r.data);
+export const adminUpdateTimeRequest = (id, data) => api.put(`/time-requests/admin/${id}`, data).then((r) => r.data);
+
 // ---- Mail (admin inbox) ----
 export const getMailConfig = () => api.get('/mail/config').then((r) => r.data);
 export const getMailMessages = (folder, page) =>
