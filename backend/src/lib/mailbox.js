@@ -20,6 +20,19 @@ function isConfigured(config) {
   return !!(config?.host && config?.user && config?.pass);
 }
 
+// ImapFlow's own error.message is often just a generic "Command failed" —
+// the server's actual reason (bad login, disabled IMAP, etc.) lives on
+// other fields depending on where it failed. Pull whatever's there so logs
+// are actually useful instead of needing to reproduce the failure by hand.
+function describeImapError(err) {
+  const detail = err.responseText || err.response?.text || err.response || '';
+  const parts = [err.message];
+  if (err.code) parts.push(`code=${err.code}`);
+  if (err.authenticationFailed) parts.push('authenticationFailed=true');
+  if (detail) parts.push(`server said: ${detail}`);
+  return parts.filter(Boolean).join(' | ');
+}
+
 async function withClient(config, fn) {
   if (!isConfigured(config)) {
     throw new Error('Mailbox is not configured — connect it from Users → My Mailbox.');
@@ -31,9 +44,17 @@ async function withClient(config, fn) {
     auth: { user: config.user, pass: config.pass },
     logger: false,
   });
-  await client.connect();
+  try {
+    await client.connect();
+  } catch (err) {
+    console.error(`[mail] connect failed for ${config.host}:${config.port || 993} as ${config.user} — ${describeImapError(err)}`);
+    throw new Error(describeImapError(err));
+  }
   try {
     return await fn(client);
+  } catch (err) {
+    console.error(`[mail] command failed for ${config.user} — ${describeImapError(err)}`);
+    throw new Error(describeImapError(err));
   } finally {
     await client.logout().catch(() => client.close());
   }
