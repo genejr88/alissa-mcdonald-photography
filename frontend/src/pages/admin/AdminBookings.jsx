@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminGetBookings, adminUpdateBooking } from '../../lib/api';
+import { adminGetBookings, adminUpdateBooking, adminCreateDepositLink } from '../../lib/api';
 
 const STATUSES = ['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 
@@ -19,8 +19,21 @@ function formatDate(iso) {
 }
 
 function BookingRow({ booking, onUpdate }) {
+  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [notes, setNotes] = useState(booking.adminNotes || '');
+  const [copied, setCopied] = useState(false);
+
+  const createLink = useMutation({
+    mutationFn: () => adminCreateDepositLink(booking.id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-bookings'] }),
+  });
+
+  const copyLink = async () => {
+    await navigator.clipboard.writeText(booking.squarePaymentLinkUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
 
   return (
     <div className="border border-gray-100 rounded-lg overflow-hidden">
@@ -116,6 +129,28 @@ function BookingRow({ booking, onUpdate }) {
             >
               {booking.depositPaid ? '✓ Deposit paid' : 'Mark deposit paid'}
             </ActionButton>
+
+            {/* Square deposit link */}
+            {booking.service?.depositAmount && !booking.depositPaid && (
+              booking.squarePaymentLinkUrl ? (
+                <ActionButton
+                  onClick={copyLink}
+                  className="border border-gray-200 text-gray-500 hover:bg-gray-100"
+                >
+                  {copied ? 'Copied ✓' : 'Copy deposit link'}
+                </ActionButton>
+              ) : (
+                <ActionButton
+                  onClick={() => createLink.mutate()}
+                  className="border border-gray-200 text-gray-500 hover:bg-gray-100"
+                >
+                  {createLink.isPending ? 'Creating…' : 'Create deposit link'}
+                </ActionButton>
+              )
+            )}
+            {createLink.isError && (
+              <span className="text-xs text-red-500 self-center">{createLink.error?.response?.data?.error || 'Could not create link.'}</span>
+            )}
 
             {/* Contract link */}
             <a
