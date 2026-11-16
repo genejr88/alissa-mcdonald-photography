@@ -68,6 +68,7 @@ export const cancelBookingByToken = (token) => api.post(`/bookings/token/${token
 
 // ---- Bookings (admin) ----
 export const adminGetBookings = (params) => api.get('/bookings/admin', { params }).then((r) => r.data);
+export const adminCreateBooking = (data) => api.post('/bookings/admin', data).then((r) => r.data);
 export const adminUpdateBooking = (id, data) => api.put(`/bookings/admin/${id}`, data).then((r) => r.data);
 export const adminCreateDepositLink = (id) => api.post(`/bookings/admin/${id}/deposit-link`).then((r) => r.data);
 
