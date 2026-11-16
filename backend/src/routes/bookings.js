@@ -3,6 +3,7 @@ const { requireAuth } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
 const { getAvailableSlots, studioTimeToUtc } = require('../lib/availability');
 const { sendMail } = require('../lib/mailer');
+const square = require('../lib/square');
 
 const BASE_URL = process.env.SITE_URL || 'https://alissamcdonaldphotography.com';
 
@@ -164,6 +165,31 @@ router.get('/admin', requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Creates the Square deposit payment link once, the first time it's needed
+// (on confirm, or on demand from admin) — never recreated once it exists,
+// since the booking's squareOrderId is what the webhook matches payment
+// events back to.
+async function ensureDepositLink(booking) {
+  if (!square.isConfigured() || booking.squarePaymentLinkUrl || !booking.service.depositAmount) {
+    return booking;
+  }
+  try {
+    const { url, orderId } = await square.createDepositPaymentLink({
+      booking,
+      service: booking.service,
+      redirectUrl: `${BASE_URL}/booking/${booking.token}`,
+    });
+    return prisma.booking.update({
+      where: { id: booking.id },
+      data: { squarePaymentLinkUrl: url, squareOrderId: orderId },
+      include: { service: true },
+    });
+  } catch (e) {
+    console.error('[square] could not create deposit link:', e.message);
+    return booking;
+  }
+}
+
 // PUT /api/bookings/admin/:id — update status / notes / depositPaid
 router.put('/admin/:id', requireAuth, async (req, res, next) => {
   try {
@@ -174,7 +200,7 @@ router.put('/admin/:id', requireAuth, async (req, res, next) => {
     if (depositPaid !== undefined) data.depositPaid = depositPaid;
 
     const prev = await prisma.booking.findUnique({ where: { id: req.params.id }, include: { service: true } });
-    const booking = await prisma.booking.update({
+    let booking = await prisma.booking.update({
       where: { id: req.params.id },
       data,
       include: { service: true },
@@ -182,19 +208,43 @@ router.put('/admin/:id', requireAuth, async (req, res, next) => {
 
     // Email client on confirm
     if (status === 'CONFIRMED' && prev?.status !== 'CONFIRMED') {
+      booking = await ensureDepositLink(booking);
+
       const timezone = await getTimezone();
       const displayTime = formatLocalDateTime(booking.startsAt, timezone);
       const clientLink = `${BASE_URL}/booking/${booking.token}`;
       const contractLink = `${BASE_URL}/contract`;
+      const depositLine = booking.squarePaymentLinkUrl
+        ? `\n\nPlease pay your deposit here to secure your spot:\n${booking.squarePaymentLinkUrl}`
+        : '';
+      const depositHtml = booking.squarePaymentLinkUrl
+        ? `<p><a href="${booking.squarePaymentLinkUrl}" style="font-weight:bold;">Pay your deposit →</a></p>`
+        : '';
+
       sendMail({
         to: booking.clientEmail,
         subject: `You're confirmed! — Alissa McDonald Photography`,
-        text: `Hi ${booking.clientName},\n\nYour ${booking.service.name} is confirmed for ${displayTime}.\n\nBefore your session, please complete the photography contract here:\n${contractLink}\n\nView your booking details: ${clientLink}\n\nSo excited to work with you!\n— Alissa`,
-        html: `<p>Hi ${booking.clientName},</p><p>Your <strong>${booking.service.name}</strong> is confirmed for <strong>${displayTime}</strong>.</p><p>Please complete your <a href="${contractLink}">photography contract</a> before your session.</p><p><a href="${clientLink}">View booking details →</a></p><p>So excited to work with you!<br>— Alissa</p>`,
+        text: `Hi ${booking.clientName},\n\nYour ${booking.service.name} is confirmed for ${displayTime}.\n\nBefore your session, please complete the photography contract here:\n${contractLink}${depositLine}\n\nView your booking details: ${clientLink}\n\nSo excited to work with you!\n— Alissa`,
+        html: `<p>Hi ${booking.clientName},</p><p>Your <strong>${booking.service.name}</strong> is confirmed for <strong>${displayTime}</strong>.</p><p>Please complete your <a href="${contractLink}">photography contract</a> before your session.</p>${depositHtml}<p><a href="${clientLink}">View booking details →</a></p><p>So excited to work with you!<br>— Alissa</p>`,
       }).catch(console.error);
     }
 
     res.json(booking);
+  } catch (e) { next(e); }
+});
+
+// POST /api/bookings/admin/:id/deposit-link — create the deposit link on
+// demand (e.g. Square wasn't configured yet when the booking was confirmed).
+router.post('/admin/:id/deposit-link', requireAuth, async (req, res, next) => {
+  try {
+    const booking = await prisma.booking.findUnique({ where: { id: req.params.id }, include: { service: true } });
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (!square.isConfigured()) return res.status(400).json({ error: 'Square is not configured.' });
+    if (!booking.service.depositAmount) return res.status(400).json({ error: 'This service has no deposit amount set.' });
+
+    const updated = await ensureDepositLink(booking);
+    if (!updated.squarePaymentLinkUrl) return res.status(502).json({ error: 'Could not create a deposit link.' });
+    res.json({ url: updated.squarePaymentLinkUrl });
   } catch (e) { next(e); }
 });
 
