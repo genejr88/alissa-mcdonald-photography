@@ -26,7 +26,6 @@ export default function KindWords() {
     >
       {/* Header */}
       <div className="px-6 pb-12 pt-32 md:px-12">
-        <p className="meta mb-4">№ 03 — Kind words</p>
         <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
           <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
             What clients <em className="italic">say</em>.

@@ -21,7 +21,6 @@ export default function Galleries() {
     >
       {/* Header — matches the house editorial style */}
       <div className="px-6 pb-12 pt-32 md:px-12">
-        <p className="meta mb-4">№ 01 — Galleries</p>
         <h1 className="font-display text-[clamp(2.5rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
           The <em className="italic">galleries</em>.
         </h1>

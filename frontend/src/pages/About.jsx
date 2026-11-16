@@ -36,7 +36,6 @@ I'm based out of the Midwest and travel for sessions — reach out and let's fig
     >
       {/* Page header */}
       <div className="px-6 pb-12 pt-32 md:px-12">
-        <p className="meta mb-4">№ 04 — About</p>
         <h1 className="font-display text-[clamp(3rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em]">
           Hi, I&rsquo;m <em className="italic">Alissa</em>.
         </h1>

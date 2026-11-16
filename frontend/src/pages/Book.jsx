@@ -534,9 +534,6 @@ function StepHeader({ step, title }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <p className="mb-3 text-[10px] uppercase tracking-[0.3em] text-accent" style={{ fontFamily: 'var(--font-mono, monospace)' }}>
-        № 0{step} — {STEP_LABELS[step - 1]}
-      </p>
       <h2 className="font-serif" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.75rem)', lineHeight: 1.1 }}>
         {title}
       </h2>

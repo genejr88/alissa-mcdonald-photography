@@ -34,18 +34,17 @@ async function squareFetch(path, { method = 'GET', body } = {}) {
   return data;
 }
 
-// Creates a hosted checkout page for a booking's deposit. "Quick pay" skips
-// having to build a full Order object first — Square creates one for us.
-async function createDepositPaymentLink({ booking, service, redirectUrl }) {
+// Creates a hosted checkout page. "Quick pay" skips having to build a full
+// Order object first — Square creates one for us.
+async function createPaymentLink({ name, amountCents, redirectUrl }) {
   if (!isConfigured()) throw new Error('Square is not configured.');
-  const amountCents = Math.round(Number(service.depositAmount) * 100);
 
   const data = await squareFetch('/v2/online-checkout/payment-links', {
     method: 'POST',
     body: {
       idempotency_key: crypto.randomUUID(),
       quick_pay: {
-        name: `Deposit — ${service.name}`,
+        name,
         price_money: { amount: amountCents, currency: 'USD' },
         location_id: process.env.SQUARE_LOCATION_ID,
       },
@@ -58,6 +57,15 @@ async function createDepositPaymentLink({ booking, service, redirectUrl }) {
     orderId: data.payment_link.order_id,
     paymentLinkId: data.payment_link.id,
   };
+}
+
+// Booking-confirm flow: deposit amount comes from the service.
+async function createDepositPaymentLink({ booking, service, redirectUrl }) {
+  return createPaymentLink({
+    name: `Deposit — ${service.name}`,
+    amountCents: Math.round(Number(service.depositAmount) * 100),
+    redirectUrl,
+  });
 }
 
 // GET /v2/payments/:id — used by the webhook handler to confirm a payment's
@@ -81,4 +89,4 @@ function verifyWebhookSignature({ rawBody, signatureHeader, notificationUrl }) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-module.exports = { isConfigured, createDepositPaymentLink, getPayment, verifyWebhookSignature };
+module.exports = { isConfigured, createPaymentLink, createDepositPaymentLink, getPayment, verifyWebhookSignature };

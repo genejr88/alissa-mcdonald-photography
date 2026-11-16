@@ -178,7 +178,6 @@ export default function Home() {
       {/* Intro statement */}
       <section className="border-t border-ink/10 px-6 py-24 md:px-12">
         <div className="relative max-w-3xl">
-          <p className="meta mb-6">№ 01 — The work</p>
           <p className="font-display text-3xl font-light leading-snug md:text-5xl">
             Real, unscripted moments that look and{' '}
             <em className="italic">feel exactly like you</em>.
@@ -204,8 +203,7 @@ export default function Home() {
         <>
           <TornEdge />
           <section className="bg-paper-2 px-6 pb-24 pt-16 md:px-12">
-            <div className="mb-12 flex items-end justify-between">
-              <p className="meta">№ 02 — Out of the darkroom</p>
+            <div className="mb-12 flex items-end">
               <p className="hidden font-hand text-xl text-ink-soft md:block" style={{ transform: 'rotate(-1.5deg)' }}>
                 a few that never made it back in the box
               </p>

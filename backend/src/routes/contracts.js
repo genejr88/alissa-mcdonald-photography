@@ -3,6 +3,7 @@ const { requireAuth } = require('../middleware/auth');
 const prisma = require('../lib/prisma');
 const { sendMail } = require('../lib/mailer');
 const { generateContractPdf } = require('../lib/generateContractPdf');
+const square = require('../lib/square');
 
 const BASE_URL = process.env.SITE_URL || 'https://alissamcdonaldphotography.com';
 
@@ -57,7 +58,7 @@ router.delete('/templates/:id', requireAuth, async (req, res, next) => {
 // Body: { templateId, bookingId?, clientName, clientEmail, sessionType, sessionDate, price, deposit? }
 router.post('/send', requireAuth, async (req, res, next) => {
   try {
-    const { templateId, bookingId, clientName, clientEmail, sessionType, sessionDate, price, deposit } = req.body;
+    const { templateId, bookingId, clientName, clientEmail, sessionType, sessionDate, price, deposit, includeDepositLink, depositLinkAmount } = req.body;
     if (!templateId || !clientName || !clientEmail) {
       return res.status(400).json({ error: 'templateId, clientName, and clientEmail are required.' });
     }
@@ -82,14 +83,49 @@ router.post('/send', requireAuth, async (req, res, next) => {
 
     const signingLink = `${BASE_URL}/sign/${contract.token}`;
 
+    // Optional, chosen per-contract — independent of a service's own deposit
+    // amount, since not every contract is tied to a booking with one set.
+    let depositLinkUrl;
+    const amount = parseFloat(depositLinkAmount);
+    if (includeDepositLink && amount > 0 && square.isConfigured()) {
+      try {
+        const booking = bookingId ? await prisma.booking.findUnique({ where: { id: bookingId } }) : null;
+        if (booking?.squarePaymentLinkUrl) {
+          depositLinkUrl = booking.squarePaymentLinkUrl;
+        } else {
+          const { url, orderId } = await square.createPaymentLink({
+            name: `Deposit — ${sessionType || clientName}`,
+            amountCents: Math.round(amount * 100),
+            redirectUrl: signingLink,
+          });
+          depositLinkUrl = url;
+          if (booking) {
+            await prisma.booking.update({
+              where: { id: booking.id },
+              data: { squareOrderId: orderId, squarePaymentLinkUrl: url },
+            }).catch(() => {});
+          }
+        }
+      } catch (e) {
+        console.error('[square] could not create contract deposit link:', e.message);
+      }
+    }
+
+    const depositLine = depositLinkUrl
+      ? `\n\nPlease pay your deposit here to confirm your session:\n${depositLinkUrl}`
+      : '';
+    const depositHtml = depositLinkUrl
+      ? `<p><a href="${depositLinkUrl}" style="font-weight:bold;">Pay your deposit →</a></p>`
+      : '';
+
     sendMail({
       to: clientEmail,
       subject: `Your photography contract is ready to sign — Alissa McDonald Photography`,
-      text: `Hi ${clientName},\n\nYour photography contract is ready! Please review and sign it at the link below:\n\n${signingLink}\n\nThis link expires in 14 days.\n\nLooking forward to your session!\n— Alissa`,
-      html: `<p>Hi ${clientName},</p><p>Your photography contract is ready to sign. Please click the link below to review and sign it:</p><p><a href="${signingLink}" style="font-size:16px;font-weight:bold;">Sign Your Contract →</a></p><p style="color:#999;font-size:12px;">This link expires in 14 days.</p><p>Looking forward to your session!<br>— Alissa</p>`,
+      text: `Hi ${clientName},\n\nYour photography contract is ready! Please review and sign it at the link below:\n\n${signingLink}${depositLine}\n\nThis link expires in 14 days.\n\nLooking forward to your session!\n— Alissa`,
+      html: `<p>Hi ${clientName},</p><p>Your photography contract is ready to sign. Please click the link below to review and sign it:</p><p><a href="${signingLink}" style="font-size:16px;font-weight:bold;">Sign Your Contract →</a></p>${depositHtml}<p style="color:#999;font-size:12px;">This link expires in 14 days.</p><p>Looking forward to your session!<br>— Alissa</p>`,
     }).catch(console.error);
 
-    res.json({ token: contract.token, signingLink });
+    res.json({ token: contract.token, signingLink, depositLinkUrl });
   } catch (e) { next(e); }
 });
 
