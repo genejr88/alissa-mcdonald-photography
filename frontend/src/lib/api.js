@@ -145,6 +145,11 @@ export const submitInquiry = (data) => api.post('/inquiries', data).then((r) => 
 export const adminGetInquiries = () => api.get('/inquiries/admin').then((r) => r.data);
 export const adminUpdateInquiry = (id, data) => api.put(`/inquiries/admin/${id}`, data).then((r) => r.data);
 
+// ---- Payments / Accounting (admin) ----
+export const adminGetPayments = (params) => api.get('/payments/admin', { params }).then((r) => r.data);
+export const adminRecordPayment = (data) => api.post('/payments/admin', data).then((r) => r.data);
+export const adminDeletePayment = (id) => api.delete(`/payments/admin/${id}`).then((r) => r.data);
+
 // ---- Time requests (public — "none of these times work") ----
 export const submitTimeRequest = (data) => api.post('/time-requests', data).then((r) => r.data);
 

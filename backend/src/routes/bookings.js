@@ -159,7 +159,7 @@ router.get('/admin', requireAuth, async (req, res, next) => {
     const bookings = await prisma.booking.findMany({
       where,
       orderBy: { startsAt: 'asc' },
-      include: { service: true },
+      include: { service: true, payments: true },
     });
     res.json(bookings);
   } catch (e) { next(e); }
@@ -232,6 +232,22 @@ router.put('/admin/:id', requireAuth, async (req, res, next) => {
       booking = await ensureDepositLink(booking);
       const timezone = await getTimezone();
       sendConfirmedEmail(booking, timezone).catch(console.error);
+    }
+
+    // Keep the Accounting ledger in sync with the manual toggle — without
+    // this, flipping depositPaid here directly would mark it paid without
+    // ever recording a payment, and the ledger would miss it entirely.
+    if (depositPaid === true && !prev?.depositPaid) {
+      await prisma.payment.create({
+        data: {
+          bookingId: booking.id,
+          type: 'DEPOSIT',
+          method: 'OTHER',
+          amount: booking.service.depositAmount || 0,
+          note: 'Marked paid manually',
+          recordedByName: req.user.name,
+        },
+      }).catch((e) => console.error('[payments] could not log manual deposit:', e.message));
     }
 
     res.json(booking);

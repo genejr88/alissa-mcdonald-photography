@@ -132,6 +132,7 @@ model Booking {
   squareOrderId         String? @unique
   squarePaymentLinkUrl  String?
   squarePaymentId       String?
+  payments              Payment[]
 
   @@index([startsAt])
 }
@@ -213,4 +214,36 @@ model TimeRequest {
   notes         String?
   handled       Boolean  @default(false)
   createdAt     DateTime @default(now())
+}
+
+enum PaymentType {
+  DEPOSIT
+  BALANCE
+  OTHER
+}
+
+enum PaymentMethod {
+  SQUARE
+  CASH
+  CHECK
+  OTHER
+}
+
+// One row per payment against a booking — a session can have several
+// (deposit, then balance, or a correction), which is why this is its own
+// table rather than just fields on Booking.
+model Payment {
+  id              String        @id @default(cuid())
+  bookingId       String
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  type            PaymentType
+  method          PaymentMethod
+  amount          Decimal       @db.Decimal(10, 2)
+  squarePaymentId String? // set when method is SQUARE and it came through the webhook
+  note            String?
+  recordedByName  String? // snapshot of the admin who logged it (null for webhook-created rows)
+  paidAt          DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+
+  @@index([bookingId])
 }

@@ -47,6 +47,7 @@ import AdminInquiries from './pages/admin/AdminInquiries';
 import AdminGuestbook from './pages/admin/AdminGuestbook';
 import AdminUsers from './pages/admin/AdminUsers';
 import AdminMail from './pages/admin/AdminMail';
+import AdminAccounting from './pages/admin/AdminAccounting';
 import NotFound from './pages/NotFound';
 
 function RequireAuth({ children }) {
@@ -111,6 +112,7 @@ export default function App() {
           <Route path="guestbook" element={<AdminGuestbook />} />
           <Route path="users" element={<AdminUsers />} />
           <Route path="mail" element={<AdminMail />} />
+          <Route path="accounting" element={<AdminAccounting />} />
         </Route>
       </Routes>
     </AnimatePresence>

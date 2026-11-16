@@ -40,6 +40,21 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
               data: { depositPaid: true, squarePaymentId: payment.id },
             });
 
+            // amount_money.amount is in cents, straight from Square's own
+            // record of what was actually paid — not whatever the service's
+            // preset deposit happens to be, since a contract-sent link can
+            // use a different amount.
+            await prisma.payment.create({
+              data: {
+                bookingId: booking.id,
+                type: 'DEPOSIT',
+                method: 'SQUARE',
+                amount: (confirmed.amount_money?.amount || 0) / 100,
+                squarePaymentId: payment.id,
+                note: 'Paid via Square',
+              },
+            }).catch((e) => console.error('[payments] could not log Square deposit:', e.message));
+
             const adminEmail = process.env.ADMIN_EMAIL;
             if (adminEmail) {
               sendMail({
