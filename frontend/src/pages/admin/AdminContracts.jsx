@@ -626,6 +626,9 @@ export default function AdminContracts() {
                           Preview ↗
                         </a>
                       )}
+                      {c.squarePaymentLinkUrl && (
+                        <CopyBtn text={c.squarePaymentLinkUrl} label="Copy deposit link" />
+                      )}
                       <button
                         onClick={() => {
                           if (confirm(`Delete this contract${c.booking?.clientName ? ` for ${c.booking.clientName}` : ''}? This cannot be undone.`)) {

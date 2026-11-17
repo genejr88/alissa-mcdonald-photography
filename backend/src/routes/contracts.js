@@ -111,6 +111,13 @@ router.post('/send', requireAuth, async (req, res, next) => {
       }
     }
 
+    if (depositLinkUrl) {
+      await prisma.contract.update({
+        where: { id: contract.id },
+        data: { squarePaymentLinkUrl: depositLinkUrl },
+      }).catch(() => {});
+    }
+
     const depositLine = depositLinkUrl
       ? `\n\nPlease pay your deposit here to confirm your session:\n${depositLinkUrl}`
       : '';
