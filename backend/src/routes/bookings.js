@@ -211,16 +211,49 @@ async function sendConfirmedEmail(booking, timezone) {
   });
 }
 
-// PUT /api/bookings/admin/:id — update status / notes / depositPaid
+// PUT /api/bookings/admin/:id — update status / notes / depositPaid, or
+// correct the session's own details (service, date/time, client info).
 router.put('/admin/:id', requireAuth, async (req, res, next) => {
   try {
-    const { status, adminNotes, depositPaid } = req.body;
+    const {
+      status, adminNotes, depositPaid,
+      serviceId, date, time, clientName, clientEmail, clientPhone, notes,
+    } = req.body;
     const data = {};
     if (status !== undefined) data.status = status;
     if (adminNotes !== undefined) data.adminNotes = adminNotes;
     if (depositPaid !== undefined) data.depositPaid = depositPaid;
+    if (clientName !== undefined) data.clientName = clientName;
+    if (clientEmail !== undefined) data.clientEmail = clientEmail;
+    if (clientPhone !== undefined) data.clientPhone = clientPhone || null;
+    if (notes !== undefined) data.notes = notes || null;
 
     const prev = await prisma.booking.findUnique({ where: { id: req.params.id }, include: { service: true } });
+    if (!prev) return res.status(404).json({ error: 'Booking not found.' });
+
+    // Editing the session itself — recompute the time window if the service
+    // and/or date/time changed, same duration math as creating one.
+    if (serviceId !== undefined || date !== undefined || time !== undefined) {
+      const service = serviceId !== undefined && serviceId !== prev.serviceId
+        ? await prisma.service.findUnique({ where: { id: serviceId } })
+        : prev.service;
+      if (!service) return res.status(404).json({ error: 'Service not found.' });
+
+      if (date !== undefined || time !== undefined) {
+        const timezone = await getTimezone();
+        // Reuse whichever half (date/time) wasn't changed from the existing start.
+        const existingLocal = new Date(prev.startsAt).toISOString();
+        const fallbackDate = existingLocal.slice(0, 10);
+        const fallbackTime = existingLocal.slice(11, 16);
+        const startsAt = studioTimeToUtc(date ?? fallbackDate, time ?? fallbackTime, timezone);
+        data.startsAt = startsAt;
+        data.endsAt = new Date(startsAt.getTime() + service.durationMin * 60000);
+      } else if (serviceId !== undefined && serviceId !== prev.serviceId) {
+        data.endsAt = new Date(prev.startsAt.getTime() + service.durationMin * 60000);
+      }
+      if (serviceId !== undefined) data.serviceId = serviceId;
+    }
+
     let booking = await prisma.booking.update({
       where: { id: req.params.id },
       data,
