@@ -18,9 +18,90 @@ function formatDate(iso) {
   });
 }
 
+function EditBookingForm({ booking, onClose, onSaved }) {
+  const { data: services } = useQuery({ queryKey: ['admin-services'], queryFn: adminGetServices });
+
+  const d = new Date(booking.startsAt);
+  const pad = (n) => String(n).padStart(2, '0');
+
+  const [f, setF] = useState({
+    serviceId: booking.serviceId,
+    date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    time: `${pad(d.getHours())}:${pad(d.getMinutes())}`,
+    clientName: booking.clientName,
+    clientEmail: booking.clientEmail,
+    clientPhone: booking.clientPhone || '',
+    notes: booking.notes || '',
+  });
+  const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
+
+  const save = useMutation({
+    mutationFn: () => adminUpdateBooking(booking.id, f),
+    onSuccess: onSaved,
+  });
+
+  const valid = f.serviceId && f.date && f.time && f.clientName.trim() && f.clientEmail.includes('@');
+  const input = 'w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white';
+  const label = 'block text-xs uppercase tracking-wide opacity-40 mb-1';
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className={label}>Service *</label>
+          <select className={input} value={f.serviceId} onChange={(e) => set('serviceId', e.target.value)}>
+            {services?.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+        </div>
+        <div />
+        <div>
+          <label className={label}>Date *</label>
+          <input type="date" className={input} value={f.date} onChange={(e) => set('date', e.target.value)} />
+        </div>
+        <div>
+          <label className={label}>Time *</label>
+          <input type="time" className={input} value={f.time} onChange={(e) => set('time', e.target.value)} />
+        </div>
+        <div>
+          <label className={label}>Client name *</label>
+          <input className={input} value={f.clientName} onChange={(e) => set('clientName', e.target.value)} />
+        </div>
+        <div>
+          <label className={label}>Client email *</label>
+          <input type="email" className={input} value={f.clientEmail} onChange={(e) => set('clientEmail', e.target.value)} />
+        </div>
+        <div>
+          <label className={label}>Client phone</label>
+          <input className={input} value={f.clientPhone} onChange={(e) => set('clientPhone', e.target.value)} placeholder="Optional" />
+        </div>
+      </div>
+      <div>
+        <label className={label}>Client notes</label>
+        <textarea className={`${input} resize-none`} rows={2} value={f.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Optional" />
+      </div>
+      {save.isError && (
+        <p className="text-red-500 text-sm">{save.error?.response?.data?.error || 'Failed to save changes.'}</p>
+      )}
+      <div className="flex gap-3">
+        <button
+          disabled={!valid || save.isPending}
+          onClick={() => save.mutate()}
+          className="bg-black text-white px-5 py-2 text-xs tracking-widest uppercase rounded hover:bg-gray-800 transition-colors disabled:opacity-40"
+        >
+          {save.isPending ? 'Saving…' : 'Save Changes'}
+        </button>
+        <button onClick={onClose} className="border border-gray-200 px-5 py-2 text-xs tracking-widest uppercase rounded hover:bg-gray-50 transition-colors">
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function BookingRow({ booking, onUpdate }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [notes, setNotes] = useState(booking.adminNotes || '');
   const [copied, setCopied] = useState(false);
 
@@ -63,12 +144,29 @@ function BookingRow({ booking, onUpdate }) {
       </div>
 
       {/* Expanded detail */}
-      {open && (
+      {open && editing && (
+        <div className="border-t border-gray-100 p-5 bg-gray-50">
+          <EditBookingForm
+            booking={booking}
+            onClose={() => setEditing(false)}
+            onSaved={() => { setEditing(false); qc.invalidateQueries({ queryKey: ['admin-bookings'] }); }}
+          />
+        </div>
+      )}
+      {open && !editing && (
         <div className="border-t border-gray-100 p-5 bg-gray-50 space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Email</span>{booking.clientEmail}</div>
-            {booking.clientPhone && <div><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Phone</span>{booking.clientPhone}</div>}
-            {booking.notes && <div className="col-span-2"><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Client notes</span>{booking.notes}</div>}
+          <div className="flex items-start justify-between gap-4">
+            <div className="grid grid-cols-2 gap-4 text-sm flex-1">
+              <div><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Email</span>{booking.clientEmail}</div>
+              {booking.clientPhone && <div><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Phone</span>{booking.clientPhone}</div>}
+              {booking.notes && <div className="col-span-2"><span className="opacity-40 text-xs uppercase tracking-wide block mb-1">Client notes</span>{booking.notes}</div>}
+            </div>
+            <button
+              onClick={() => setEditing(true)}
+              className="shrink-0 text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors"
+            >
+              Edit
+            </button>
           </div>
 
           {/* Admin notes */}
