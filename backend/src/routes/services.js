@@ -30,7 +30,7 @@ router.post('/admin', requireAuth, async (req, res, next) => {
     const count = await prisma.service.count();
     const service = await prisma.service.create({
       data: {
-        name, number: number ?? count + 1, description,
+        name, number: number !== undefined ? parseInt(number) : count + 1, description,
         includes: includes || null,
         durationMin: parseInt(durationMin),
         price: parseFloat(price),
@@ -50,7 +50,7 @@ router.put('/admin/:id', requireAuth, async (req, res, next) => {
     const { name, number, description, includes, durationMin, price, depositAmount, bufferMin, active, sortOrder } = req.body;
     const data = {};
     if (name !== undefined) data.name = name;
-    if (number !== undefined) data.number = number;
+    if (number !== undefined) data.number = parseInt(number);
     if (description !== undefined) data.description = description;
     if (includes !== undefined) data.includes = includes || null;
     if (durationMin !== undefined) data.durationMin = parseInt(durationMin);
