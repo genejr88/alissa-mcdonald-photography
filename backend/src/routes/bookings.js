@@ -195,7 +195,6 @@ async function ensureDepositLink(booking) {
 async function sendConfirmedEmail(booking, timezone) {
   const displayTime = formatLocalDateTime(booking.startsAt, timezone);
   const clientLink = `${BASE_URL}/booking/${booking.token}`;
-  const contractLink = `${BASE_URL}/contract`;
   const depositLine = booking.squarePaymentLinkUrl
     ? `\n\nPlease pay your deposit here to secure your spot:\n${booking.squarePaymentLinkUrl}`
     : '';
@@ -203,11 +202,15 @@ async function sendConfirmedEmail(booking, timezone) {
     ? `<p><a href="${booking.squarePaymentLinkUrl}" style="font-weight:bold;">Pay your deposit →</a></p>`
     : '';
 
+  // No contract link here — contracts aren't auto-generated on confirm, only
+  // when an admin explicitly sends one (Contracts/Mail "Send Contract"),
+  // which includes its own token-specific signing link. There's no generic
+  // public contract page to point to yet.
   return sendMail({
     to: booking.clientEmail,
     subject: `You're confirmed! — Alissa McDonald Photography`,
-    text: `Hi ${booking.clientName},\n\nYour ${booking.service.name} is confirmed for ${displayTime}.\n\nBefore your session, please complete the photography contract here:\n${contractLink}${depositLine}\n\nView your booking details: ${clientLink}\n\nSo excited to work with you!\n— Alissa`,
-    html: `<p>Hi ${booking.clientName},</p><p>Your <strong>${booking.service.name}</strong> is confirmed for <strong>${displayTime}</strong>.</p><p>Please complete your <a href="${contractLink}">photography contract</a> before your session.</p>${depositHtml}<p><a href="${clientLink}">View booking details →</a></p><p>So excited to work with you!<br>— Alissa</p>`,
+    text: `Hi ${booking.clientName},\n\nYour ${booking.service.name} is confirmed for ${displayTime}.\n\nI'll follow up shortly with your photography contract to review and sign.${depositLine}\n\nView your booking details: ${clientLink}\n\nSo excited to work with you!\n— Alissa`,
+    html: `<p>Hi ${booking.clientName},</p><p>Your <strong>${booking.service.name}</strong> is confirmed for <strong>${displayTime}</strong>.</p><p>I'll follow up shortly with your photography contract to review and sign.</p>${depositHtml}<p><a href="${clientLink}">View booking details →</a></p><p>So excited to work with you!<br>— Alissa</p>`,
   });
 }
 

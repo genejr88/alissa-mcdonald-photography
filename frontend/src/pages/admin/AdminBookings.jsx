@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminGetBookings, adminCreateBooking, adminUpdateBooking, adminCreateDepositLink, adminGetServices } from '../../lib/api';
 
@@ -250,15 +251,13 @@ function BookingRow({ booking, onUpdate }) {
               <span className="text-xs text-red-500 self-center">{createLink.error?.response?.data?.error || 'Could not create link.'}</span>
             )}
 
-            {/* Contract link */}
-            <a
-              href="/contract"
-              target="_blank"
-              rel="noreferrer"
+            {/* Send contract — jumps to Contracts with this booking preselected */}
+            <Link
+              to={`/admin/contracts?bookingId=${booking.id}`}
               className="text-xs px-3 py-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-100 transition-colors"
             >
-              Share contract ↗
-            </a>
+              Send contract →
+            </Link>
           </div>
         </div>
       )}

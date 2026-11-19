@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   adminGetContracts,
@@ -31,8 +32,8 @@ function CopyBtn({ text, label = 'Copy' }) {
 }
 
 // ── Send Contract Modal ───────────────────────────────────────────────────────
-function SendModal({ templates, bookings, onClose, onSent }) {
-  const [bookingId, setBookingId] = useState('');
+function SendModal({ templates, bookings, initialBookingId, onClose, onSent }) {
+  const [bookingId, setBookingId] = useState(initialBookingId || '');
   const [templateId, setTemplateId] = useState(templates[0]?.id || '');
   const [manual, setManual] = useState({ clientName: '', clientEmail: '', sessionType: '', sessionDate: '', price: '', deposit: '' });
   const [includeDepositLink, setIncludeDepositLink] = useState(false);
@@ -524,6 +525,7 @@ function TemplateEditor({ template, onSave, onCancel, isPending }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function AdminContracts() {
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tab, setTab] = useState('sent');
   const [showSend, setShowSend] = useState(false);
   const [editTemplate, setEditTemplate] = useState(null); // null | 'new' | template object
@@ -531,6 +533,21 @@ export default function AdminContracts() {
   const { data: contracts = [] } = useQuery({ queryKey: ['admin-contracts'], queryFn: adminGetContracts });
   const { data: templates = [] } = useQuery({ queryKey: ['contract-templates'], queryFn: adminGetContractTemplates });
   const { data: bookings = [] } = useQuery({ queryKey: ['admin-bookings', 'all'], queryFn: () => adminGetBookings({}) });
+
+  // Arriving from Bookings' "Send contract" link — open straight to the
+  // Send modal with that booking preselected. Captured once into state
+  // (rather than read live from searchParams) since the URL param is
+  // cleared right after — SendModal needs the value to survive that.
+  const [sendBookingId, setSendBookingId] = useState(null);
+  useEffect(() => {
+    const id = searchParams.get('bookingId');
+    if (id) {
+      setSendBookingId(id);
+      setShowSend(true);
+      setSearchParams((p) => { p.delete('bookingId'); return p; }, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createTemplate = useMutation({
     mutationFn: adminCreateContractTemplate,
@@ -710,8 +727,9 @@ export default function AdminContracts() {
         <SendModal
           templates={templates}
           bookings={bookings}
-          onClose={() => setShowSend(false)}
-          onSent={() => setShowSend(false)}
+          initialBookingId={sendBookingId}
+          onClose={() => { setShowSend(false); setSendBookingId(null); }}
+          onSent={() => { setShowSend(false); setSendBookingId(null); }}
         />
       )}
     </div>
