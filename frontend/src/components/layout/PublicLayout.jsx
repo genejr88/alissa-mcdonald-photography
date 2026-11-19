@@ -258,7 +258,10 @@ export default function PublicLayout() {
 
         {/* Bottom strip */}
         <div className="flex flex-col gap-3 border-t border-ink/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="meta">© {new Date().getFullYear()} Alissa McDonald Photography</p>
+          <div className="flex items-center gap-4">
+            <p className="meta">© {new Date().getFullYear()} Alissa McDonald Photography</p>
+            <Link to="/privacy" className="link-draw meta">Privacy Policy</Link>
+          </div>
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="link-draw meta self-start sm:self-auto"
