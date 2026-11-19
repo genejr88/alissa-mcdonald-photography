@@ -13,6 +13,9 @@ const navLinks = [
   { to: '/book', label: 'Book a Session' },
 ];
 
+// Square-hosted eGift card checkout — no backend involvement, just a link out
+const GIFT_CARD_URL = 'https://app.squareup.com/gift/MLFWNRYCW1Y36/order';
+
 // Live studio clock — Connecticut time, ticks each minute
 function StudioClock() {
   const [now, setNow] = useState(() => new Date());
@@ -141,7 +144,16 @@ export default function PublicLayout() {
                 ))}
               </nav>
 
-              <div className="mt-auto flex gap-6">
+              <div className="mt-auto flex flex-col gap-4">
+                <a
+                  href={GIFT_CARD_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-[10px] uppercase tracking-widest text-paper/50 hover:text-paper/80"
+                >
+                  Gift Cards ↗
+                </a>
+                <div className="flex gap-6">
                 <a
                   href="https://www.instagram.com/alissamcdonald.photography_"
                   target="_blank"
@@ -160,6 +172,7 @@ export default function PublicLayout() {
                   <FacebookDoodle className="h-4 w-4" />
                   Facebook
                 </a>
+                </div>
               </div>
             </motion.div>
           </>
@@ -216,6 +229,14 @@ export default function PublicLayout() {
           <div>
             <p className="meta mb-4 opacity-60">Connect</p>
             <div className="flex flex-col gap-2.5">
+              <a
+                href={GIFT_CARD_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="group flex items-center gap-2.5 self-start font-body text-sm font-light"
+              >
+                <span className="link-draw">Gift Cards ↗</span>
+              </a>
               <a
                 href="https://www.instagram.com/alissamcdonald.photography_"
                 target="_blank"
